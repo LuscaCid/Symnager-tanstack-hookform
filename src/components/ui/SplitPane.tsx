@@ -126,7 +126,6 @@ export function SplitPane({ left, right, storageKey, defaultSize = 50, minLeft =
         aria-valuemin={0}
         aria-valuemax={100}
         tabIndex={0}
-        title="Arraste para redimensionar (duplo clique para restaurar)"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

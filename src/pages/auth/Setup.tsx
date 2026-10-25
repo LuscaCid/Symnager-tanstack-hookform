@@ -1,11 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { AuthSkeleton } from "@/components/skeletons/PageSkeletons"
 import { Rocket } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { Navigate, useNavigate } from "react-router-dom"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Button, Spinner, TextField } from "@/components/ui"
+import { Button, TextField } from "@/components/ui"
 import { useAuth } from "@/contexts/Auth-context"
 import { getErrorMessage } from "@/service/api"
 import { passwordSchema, usernameSchema } from "@/lib/validation"
@@ -36,7 +37,7 @@ export default function Setup() {
     formState: { errors, isSubmitting },
   } = useForm<FormType>({ resolver: zodResolver(schema) })
 
-  if (status === "loading") return <Spinner className="h-full" />
+  if (status === "loading") return <AuthSkeleton fields={6} />
   if (status === "offline") return <OfflineScreen />
   if (status !== "needs-setup") return <Navigate to="/" replace />
 

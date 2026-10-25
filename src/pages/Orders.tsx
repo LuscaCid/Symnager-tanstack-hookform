@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { OrdersTableSkeleton } from "@/components/skeletons/PageSkeletons"
 import { AlertTriangle, ClipboardList, LayoutGrid, List, Plus, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
@@ -15,9 +16,9 @@ import {
   PriorityBadge,
   SearchInput,
   SelectField,
-  Spinner,
   StatusBadge,
   TextField,
+  Tooltip,
 } from "@/components/ui"
 import { OrderBoard } from "@/components/orders/OrderBoard"
 import { isOverdue } from "@/components/orders/orderUtils"
@@ -44,9 +45,9 @@ const columns: Column<Order>[] = [
     key: "device",
     header: "Equipamento",
     render: (o) => (
-      <span className="block max-w-64 truncate" title={o.description}>
-        {o.device}
-      </span>
+      <Tooltip content={o.description} side="top" align="start">
+        <span className="block max-w-64 truncate">{o.device}</span>
+      </Tooltip>
     ),
   },
   { key: "status", header: "Status", render: (o) => <StatusBadge status={o.status} /> },
@@ -146,7 +147,7 @@ function OrdersList() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      <div className="shrink-0 flex flex-col gap-2 p-2 border-b border-line ">
+      <div className="shrink-0 flex flex-col gap-3 px-4 pb-4">
         <SearchInput value={query} onChange={setQuery} placeholder="Buscar por nº, cliente, equipamento, série ou código de rastreio" />
         <div className="flex flex-wrap gap-1" role="group" aria-label="Filtrar por status">
           {ORDER_STATUSES.map((status) => {
@@ -200,16 +201,16 @@ function OrdersList() {
               Atrasadas
             </Button>
             {hasFilters && (
-              <Button size="sm" icon={X} variant="ghost" onClick={clearFilters} title="Limpar filtros">
+              <Button size="sm" icon={X} variant="ghost" onClick={clearFilters} tooltip="Limpar filtros">
                 Limpar
               </Button>
             )}
           </div>
         </div>
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto p-2">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
         {isLoading ? (
-          <Spinner />
+          <OrdersTableSkeleton />
         ) : isError || !data ? (
           <ErrorState message="Não foi possível carregar as ordens de serviço." onRetry={() => refetch()} />
         ) : (
@@ -270,26 +271,26 @@ export default function Orders() {
         subtitle={view === "board" ? "Arraste os cartões entre as colunas para mudar o status" : undefined}
         actions={
           <>
-            <div role="group" aria-label="Modo de visualização" className="flex rounded-md border border-line overflow-hidden">
+            <div role="group" aria-label="Modo de visualização" className="flex gap-0.5 p-0.5 rounded-lg bg-subtle">
               <button
                 onClick={() => setView("list")}
                 aria-pressed={view === "list"}
                 className={cn(
-                  "flex items-center gap-1 px-2 py-1 text-sm transition duration-200",
+                  "flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[13px] transition-colors duration-100",
                   view === "list" ? "bg-surface shadow-sm text-fg font-medium" : "text-muted hover:text-fg",
                 )}
               >
-                <List size={16} /> Lista
+                <List size={14} /> Lista
               </button>
               <button
                 onClick={() => setView("board")}
                 aria-pressed={view === "board"}
                 className={cn(
-                  "flex items-center gap-1 px-2 py-1 text-sm border-l border-line  transition duration-200",
+                  "flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[13px] transition-colors duration-100",
                   view === "board" ? "bg-surface shadow-sm text-fg font-medium" : "text-muted hover:text-fg",
                 )}
               >
-                <LayoutGrid size={16} /> Quadro
+                <LayoutGrid size={14} /> Quadro
               </button>
             </div>
             <Button size="sm" variant="primary" icon={Plus} onClick={() => navigate("/recepcao")}>

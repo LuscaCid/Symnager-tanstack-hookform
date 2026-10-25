@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import { FormEvent, useState } from "react"
 import type { Order, OrderHistory, OrderStatus } from "@/@types/api"
-import { Button, EmptyState, StatusBadge, TextAreaField } from "@/components/ui"
+import { Button, EmptyState, StatusBadge, TextAreaField, Tooltip } from "@/components/ui"
 import { formatDateTime, formatRelative } from "@/lib/format"
 import { ordersService } from "@/services/resources"
 
@@ -96,10 +96,12 @@ export function OrderHistoryTab({ order }: { order: Order }) {
                       <StatusBadge status={h.to_status as OrderStatus} />
                     </span>
                   )}
-                  <span className="text-xs text-faint" title={formatDateTime(h.created_at)}>
-                    {formatRelative(h.created_at)}
-                    {h.user && ` · ${h.user.name}`}
-                  </span>
+                  <Tooltip content={formatDateTime(h.created_at)}>
+                    <span className="text-xs text-faint">
+                      {formatRelative(h.created_at)}
+                      {h.user && ` · ${h.user.name}`}
+                    </span>
+                  </Tooltip>
                 </div>
                 {h.message && <p className="text-sm text-fg whitespace-pre-wrap mt-0.5">{h.message}</p>}
               </li>

@@ -3,7 +3,7 @@ import { Monitor, Printer, Save } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import type { Settings } from "@/@types/api"
-import { Button, Checkbox, Panel, SelectField, Spinner, TextField } from "@/components/ui"
+import { Button, Checkbox, Panel, SelectField, TextField, SkeletonForm } from "@/components/ui"
 import { useHasRole } from "@/contexts/Auth-context"
 import { useSettings } from "@/lib/hooks"
 import { bridge, isDesktop } from "@/lib/runtime"
@@ -23,7 +23,7 @@ function CompanyPrintDefaults() {
     if (data) setForm(withDefaults(data).print)
   }, [data])
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <SkeletonForm fields={6} columns={2} />
 
   const update = (partial: Partial<Settings["print"]>) => setForm((f) => ({ ...f, ...partial }))
 

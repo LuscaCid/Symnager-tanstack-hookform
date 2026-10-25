@@ -1,4 +1,5 @@
 import type { KeyCount } from "@/@types/api"
+import { Tooltip } from "@/components/ui"
 import { cn } from "@/lib/cn"
 import { formatNumber } from "@/lib/format"
 import { useChartTheme } from "@/components/dashboard/chartTheme"
@@ -32,10 +33,10 @@ export function Pareto({ items, onSelect }: { items: KeyCount[]; onSelect?: (key
           const vital = total > 0 && before / total < 0.8
           return (
             <li key={item.key}>
+              <Tooltip content={`${item.key}: ${item.count} (${Math.round(share * 100)}%)`} side="top" align="start">
               <button
                 type="button"
                 onClick={onSelect ? () => onSelect(item.key) : undefined}
-                title={`${item.key}: ${item.count} (${Math.round(share * 100)}%)`}
                 className={cn(
                   "w-full grid grid-cols-[minmax(0,10rem)_1fr_3.5rem_3.5rem] gap-2 items-center px-1 py-0.5 rounded-sm text-sm text-left",
                   onSelect && "hover:bg-hover  transition duration-200",
@@ -55,6 +56,7 @@ export function Pareto({ items, onSelect }: { items: KeyCount[]; onSelect?: (key
                 <span className="text-right tabular-nums text-xs">{Math.round(share * 100)}%</span>
                 <span className={cn("text-right tabular-nums text-xs", cumulative <= 0.8 && "font-semibold")}>{Math.round(cumulative * 100)}%</span>
               </button>
+              </Tooltip>
             </li>
           )
         })}

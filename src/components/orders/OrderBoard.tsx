@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
+import { OrderBoardSkeleton } from "@/components/skeletons/PageSkeletons"
 import { CalendarClock, GripVertical, User } from "lucide-react"
 import { DragEvent, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ORDER_STATUSES, type Order, type OrderStatus } from "@/@types/api"
-import { ErrorState, PriorityBadge, Spinner } from "@/components/ui"
+import { ErrorState, PriorityBadge, Tooltip } from "@/components/ui"
 import { cn } from "@/lib/cn"
 import { formatDate, formatMoney, formatOrderNumber, STATUS_HEX, STATUS_LABEL } from "@/lib/format"
 import { ordersService } from "@/services/resources"
@@ -49,15 +50,11 @@ function BoardCard({ order, onDragStart, onDragEnd }: { order: Order; onDragStar
       <div className="flex flex-wrap items-center gap-1">
         {order.priority !== "NORMAL" && <PriorityBadge priority={order.priority} />}
         {order.due_date && (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 text-xs",
-              overdue ? "text-red-500 font-semibold" : "text-muted ",
-            )}
-            title={overdue ? "Prazo vencido" : "Previsão de entrega"}
-          >
-            <CalendarClock size={12} /> {formatDate(order.due_date, "dd/MM")}
-          </span>
+          <Tooltip content={overdue ? "Prazo vencido" : "Previsão de entrega"}>
+            <span className={cn("inline-flex items-center gap-1 text-xs", overdue ? "text-danger font-semibold" : "text-muted")}>
+              <CalendarClock size={12} /> {formatDate(order.due_date, "dd/MM")}
+            </span>
+          </Tooltip>
         )}
         {order.total > 0 && <span className="ml-auto text-xs font-semibold tabular-nums">{formatMoney(order.total)}</span>}
       </div>
@@ -77,7 +74,7 @@ export function OrderBoard() {
   const [dragging, setDragging] = useState<Order | null>(null)
   const [over, setOver] = useState<OrderStatus | null>(null)
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <OrderBoardSkeleton />
   if (isError || !data) return <ErrorState message="Não foi possível carregar o quadro." onRetry={() => refetch()} />
 
   function handleDrop(e: DragEvent<HTMLElement>, status: OrderStatus) {

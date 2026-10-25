@@ -57,7 +57,7 @@ export function FormActions({
           icon={Ban}
           onClick={() => setConfirm(true)}
           disabled={!!deactivateBlockedReason}
-          title={deactivateBlockedReason}
+          tooltip={deactivateBlockedReason}
         >
           {deactivateLabel}
         </Button>

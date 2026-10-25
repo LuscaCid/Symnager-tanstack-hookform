@@ -7,6 +7,7 @@ import { ThemeContext, ThemeProvider } from "./contexts/Theme-context"
 import { AuthProvider } from "./contexts/Auth-context"
 import AllRoutes from "./routes/index.routes"
 import { getErrorMessage } from "./service/api"
+import { TooltipProvider } from "./components/ui/Tooltip"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,12 +54,14 @@ function App() {
     <div className="absolute inset-0 overflow-hidden text-fg bg-app print:static print:p-0 print:bg-white print:text-black print:overflow-visible">
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
+          <TooltipProvider>
           <AuthProvider>
             <SidebarContextProvider>
               <AllRoutes />
             </SidebarContextProvider>
           </AuthProvider>
           <ThemedToaster />
+          </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </div>

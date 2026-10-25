@@ -1,41 +1,32 @@
-import { lazy, ReactNode, Suspense } from 'react'
+import { ComponentType, ReactNode, Suspense, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import { Layout } from '../components/Layout'
 import { useAuth } from '@/contexts/Auth-context'
-import { Spinner } from '@/components/ui'
 import type { Role } from '@/@types/api'
 import OfflineScreen from '@/pages/auth/Offline'
-import { SlimTitleBar } from '@/components/Layout/WindowControls'
+import { pages, preloadAppPages } from './pages'
+import {
+  AppShellSkeleton, AuditSkeleton, AuthSkeleton, CatalogSkeleton, ClientDetailsSkeleton, ClientsSkeleton,
+  DashboardSkeleton, FailuresSkeleton, LookupsSkeleton, OrderDetailsSkeleton, OrdersSkeleton, PrintSkeleton,
+  ReceptionSkeleton, SettingsSkeleton,
+} from '@/components/skeletons/PageSkeletons'
 
-const Dashboard = lazy(() => import('../pages/Dashboard'))
-const Home = lazy(() => import('../pages/HomePage'))
-const Orders = lazy(() => import('../pages/Orders'))
-const OrderDetails = lazy(() => import('../pages/OrderDetails'))
-const OrderPrint = lazy(() => import('../pages/OrderPrint'))
-const User = lazy(() => import('../pages/User'))
-const ClientDetails = lazy(() => import('../pages/ClientDetails'))
-const Failures = lazy(() => import('../pages/Failures'))
-const Services = lazy(() => import('../pages/catalog/Services'))
-const Products = lazy(() => import('../pages/catalog/Products'))
-const Suppliers = lazy(() => import('../pages/catalog/Suppliers'))
-const Users = lazy(() => import('../pages/catalog/Users'))
-const Lookups = lazy(() => import('../pages/catalog/Lookups'))
-const Settings = lazy(() => import('../pages/Settings'))
-const Audit = lazy(() => import('../pages/Audit'))
-const Login = lazy(() => import('../pages/auth/Login'))
-const Setup = lazy(() => import('../pages/auth/Setup'))
-const Connection = lazy(() => import('../pages/auth/Connection'))
-const Track = lazy(() => import('../pages/Track'))
-const NotFound = lazy(() => import('../pages/NotFound'))
+const {
+  Dashboard, Home, Orders, OrderDetails, OrderPrint, User, ClientDetails, Failures, Services, Products,
+  Suppliers, Users, Lookups, Settings, Audit, Login, Setup, Connection, Track, NotFound,
+} = pages
 
+/** Inicialização (verificando servidor/sessão): casca do app em skeleton. */
 function FullScreenLoading() {
+  return <AppShellSkeleton />
+}
+
+/** Cada rota tem o próprio Suspense com o skeleton da tela, em vez de um "Carregando..." genérico. */
+function withSkeleton(Page: ComponentType, Skeleton: ComponentType) {
   return (
-    <div className="h-full flex flex-col">
-      <SlimTitleBar title="" />
-      <div className="flex-1 flex items-center justify-center">
-        <Spinner label="Iniciando o Symnager..." />
-      </div>
-    </div>
+    <Suspense fallback={<Skeleton />}>
+      <Page />
+    </Suspense>
   )
 }
 
@@ -46,6 +37,14 @@ function RequireAuth({ children }: { children: ReactNode }) {
   if (status === 'offline') return <OfflineScreen />
   if (status === 'needs-setup') return <Navigate to='/setup' replace />
   if (status === 'unauthenticated') return <Navigate to='/login' replace state={{ from: location.pathname }} />
+  return <Authenticated>{children}</Authenticated>
+}
+
+/** Após autenticar, baixa o código das demais páginas em segundo plano. */
+function Authenticated({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    preloadAppPages()
+  }, [])
   return <>{children}</>
 }
 
@@ -66,30 +65,30 @@ export default function AppRoutes(){
   return (
     <Suspense fallback={<FullScreenLoading />}>
       <Routes>
-        <Route path='/login' element={<Login />} />
-        <Route path='/setup' element={<Setup />} />
-        <Route path='/conexao' element={<Connection />} />
-        <Route path='/rastreio' element={<Track />} />
-        <Route path='/rastreio/:code' element={<Track />} />
+        <Route path='/login' element={withSkeleton(Login, AuthSkeleton)} />
+        <Route path='/setup' element={withSkeleton(Setup, AuthSkeleton)} />
+        <Route path='/conexao' element={withSkeleton(Connection, AuthSkeleton)} />
+        <Route path='/rastreio' element={withSkeleton(Track, AuthSkeleton)} />
+        <Route path='/rastreio/:code' element={withSkeleton(Track, AuthSkeleton)} />
 
-        <Route path='/ordens/:id/imprimir' element={<RequireAuth><OrderPrint /></RequireAuth>} />
+        <Route path='/ordens/:id/imprimir' element={<RequireAuth>{withSkeleton(OrderPrint, PrintSkeleton)}</RequireAuth>} />
 
         <Route path='/' element={<RequireAuth><Layout /></RequireAuth>}>
-          <Route index element={<Dashboard />} />
-          <Route path='recepcao' element={<Home />} />
-          <Route path='ordens' element={<Orders />} />
-          <Route path='ordens/:id' element={<OrderDetails />} />
-          <Route path='clientes' element={<User />} />
-          <Route path='clientes/:id' element={<ClientDetails />} />
-          <Route path='falhas' element={<Failures />} />
-          <Route path='cadastros/servicos' element={<Services />} />
-          <Route path='cadastros/produtos' element={<Products />} />
-          <Route path='cadastros/fornecedores' element={<Suppliers />} />
-          <Route path='cadastros/usuarios' element={<RequireRole roles={['ADMIN']}><Users /></RequireRole>} />
-          <Route path='cadastros/auxiliares' element={<Lookups />} />
-          <Route path='configuracoes' element={<Settings />} />
-          <Route path='configuracoes/:tab' element={<Settings />} />
-          <Route path='auditoria' element={<RequireRole roles={['ADMIN']}><Audit /></RequireRole>} />
+          <Route index element={withSkeleton(Dashboard, DashboardSkeleton)} />
+          <Route path='recepcao' element={withSkeleton(Home, ReceptionSkeleton)} />
+          <Route path='ordens' element={withSkeleton(Orders, OrdersSkeleton)} />
+          <Route path='ordens/:id' element={withSkeleton(OrderDetails, OrderDetailsSkeleton)} />
+          <Route path='clientes' element={withSkeleton(User, ClientsSkeleton)} />
+          <Route path='clientes/:id' element={withSkeleton(ClientDetails, ClientDetailsSkeleton)} />
+          <Route path='falhas' element={withSkeleton(Failures, FailuresSkeleton)} />
+          <Route path='cadastros/servicos' element={withSkeleton(Services, CatalogSkeleton)} />
+          <Route path='cadastros/produtos' element={withSkeleton(Products, CatalogSkeleton)} />
+          <Route path='cadastros/fornecedores' element={withSkeleton(Suppliers, CatalogSkeleton)} />
+          <Route path='cadastros/usuarios' element={<RequireRole roles={['ADMIN']}>{withSkeleton(Users, CatalogSkeleton)}</RequireRole>} />
+          <Route path='cadastros/auxiliares' element={withSkeleton(Lookups, LookupsSkeleton)} />
+          <Route path='configuracoes' element={withSkeleton(Settings, SettingsSkeleton)} />
+          <Route path='configuracoes/:tab' element={withSkeleton(Settings, SettingsSkeleton)} />
+          <Route path='auditoria' element={<RequireRole roles={['ADMIN']}>{withSkeleton(Audit, AuditSkeleton)}</RequireRole>} />
           {/* rotas antigas */}
           <Route path='user' element={<Navigate to='/clientes' replace />} />
           <Route path='clientdetails' element={<LegacyClientDetails />} />

@@ -1,4 +1,5 @@
 import type { Client } from '@/@types/api'
+import { Tooltip } from "@/components/ui"
 import { useNavigate } from 'react-router-dom'
 import { ClipboardList } from 'lucide-react'
 import { formatPhone, formatRelative } from '@/lib/format'
@@ -22,9 +23,11 @@ export function UserBox({ client } : { client : Client }){
                 <footer className='flex items-center justify-between gap-2 text-[13px] text-muted'>
                     <span className='truncate'>{formatPhone(client.phone)}{client.email ? ` · ${client.email}` : ''}</span>
                     {client._count && (
-                        <span className='shrink-0 flex items-center gap-1 text-xs text-faint' title='Ordens de serviço'>
-                            <ClipboardList size={13} /> {client._count.orders}
-                        </span>
+                        <Tooltip content='Ordens de serviço'>
+                            <span className='shrink-0 flex items-center gap-1 text-xs text-faint'>
+                                <ClipboardList size={13} /> {client._count.orders}
+                            </span>
+                        </Tooltip>
                     )}
                 </footer>
             </div>

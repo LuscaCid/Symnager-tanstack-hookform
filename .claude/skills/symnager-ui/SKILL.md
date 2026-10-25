@@ -54,11 +54,28 @@ botões/inputs são automaticamente `no-drag`, duplo clique na área livre maxim
 (minimizar / maximizar-restaurar / fechar, F11 = tela cheia) fica à direita. Telas fora do layout usam `<SlimTitleBar/>`.
 Elemento interativo novo dentro de uma área `app-drag` que não seja button/input/a precisa da classe `app-no-drag`.
 
+## Seleção, dicas e carregamento (obrigatório)
+- **Nunca `<select>` nativo nem `<datalist>`**. Use `SelectField` (mesma API do select: `<option>` filhas, funciona com
+  `register`; busca automática com 8+ opções ou `searchable`) e `ComboboxField` (texto com sugestões + criar valor novo;
+  `multiple` mostra badges com X dentro do campo; guarda "a, b, c"). Ambos fecham ao clicar fora/Esc (Radix Popover).
+- **Nunca atributo `title`** para dicas: use `<Tooltip content="..." shortcut="Ctrl K">`, `Button tooltip="..."`, e `IconButton`
+  (o `label` vira tooltip automaticamente). Tooltip em botão desabilitado precisa de um `<span>` envolvendo.
+- **Nunca "Carregando..."/spinner para conteúdo de página**: use o skeleton da tela em `components/skeletons/PageSkeletons.tsx`
+  (versão `XxxSkeleton` = tela inteira no Suspense da rota; `XxxContentSkeleton` = só a área de dados). Tela nova →
+  crie o skeleton dela com as peças de `ui/Skeleton.tsx` (`Bone`, `SkeletonPageHeader`, `SkeletonStat`, `SkeletonTable`,
+  `SkeletonForm`, `SkeletonList`...) reproduzindo o mesmo grid/espaçamento, e registre com `withSkeleton()` em `app.routes.tsx`.
+- Rotas: Suspense nunca acima do `<Layout>` (causava o flick de header/sidebar). Páginas são `lazyPage()` em `routes/pages.ts`
+  e pré-carregadas após o login.
+
+## Espaçamento
+Ritmo de 16px: `px-4` nas laterais de página, `pb-4` sob filtros, `gap-4` entre cartões/blocos, `mb-4` já embutido em `<Tabs>`.
+Formulários: grade `gap-3`, seções com título `text-xs uppercase tracking-wider text-faint`.
+
 ## Componentes base (`src/components/ui/`)
-`Button` (default | primary | success | danger | ghost; sm | md), `IconButton`, `TextField`, `SelectField`, `TextAreaField`,
+`Button` (default | primary | success | danger | ghost; sm | md; `tooltip`), `IconButton`, `TextField`, `TextAreaField`,
 `SearchInput`, `Checkbox`, `PageHeader`, `Panel`, `Page`, `PageBody`, `Badge`, `StatusBadge`, `PriorityBadge`, `TagChip`,
 `Modal`, `ConfirmDialog`, `DataTable`, `Pagination`, `Tabs`, `EmptyState`, `ErrorState`, `Spinner`, `ListSkeleton`,
-`StatCard`, `SplitPane`. Constante `inputClass` para inputs customizados.
+`StatCard`, `SplitPane`, `SelectField`, `ComboboxField`, `Tooltip`, skeletons (`Skeleton.tsx`). Constante `inputClass` para inputs customizados.
 
 ## Interação
 - Feedback com `toast` (sonner) e `ConfirmDialog`; nunca `alert()/confirm()`.

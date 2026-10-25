@@ -1,4 +1,5 @@
 import { Moon, Sun } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { useContextSelector } from 'use-context-selector'
 import { ThemeContext } from '@/contexts/Theme-context'
 import { cn } from '@/lib/cn'
@@ -11,14 +12,15 @@ export function ChangeTheme({ compact = false }: { compact?: boolean }) {
     if (compact) {
         const next = theme === 'dark' ? 'light' : 'dark'
         return (
+            <Tooltip content={next === 'dark' ? 'Tema escuro' : 'Tema claro'} side='right'>
             <button
                 onClick={() => toggleTheme(next)}
                 aria-label={next === 'dark' ? 'Tema escuro' : 'Tema claro'}
-                title={next === 'dark' ? 'Tema escuro' : 'Tema claro'}
                 className='mx-auto h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted hover:bg-hover hover:text-fg transition-colors'
             >
                 {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
+            </Tooltip>
         )
     }
 

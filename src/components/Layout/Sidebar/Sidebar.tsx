@@ -1,4 +1,5 @@
 import { SidebarContext } from "../../../contexts/Sidebar-context";
+import { Tooltip } from "@/components/ui/Tooltip"
 import { ChevronsUpDown, LogOut, User } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useContextSelector } from "use-context-selector";
@@ -59,10 +60,10 @@ export function Sidebar () {
                 <ul className="list-none flex flex-col gap-0.5">
                   {items.map(({ to, label, icon: Icon }) => (
                     <li key={to}>
+                      <Tooltip content={label} side="right" disabled={isOpen}>
                       <NavLink
                         to={to}
                         end={to === "/"}
-                        title={label}
                         onClick={closeOnMobile}
                         className={({ isActive }) =>
                           cn(
@@ -77,6 +78,7 @@ export function Sidebar () {
                         <Icon size={16} className="shrink-0" />
                         {isOpen && <span className="truncate">{label}</span>}
                       </NavLink>
+                      </Tooltip>
                     </li>
                   ))}
                 </ul>
@@ -94,7 +96,6 @@ export function Sidebar () {
                 "rounded-lg flex gap-2.5 p-1.5 hover:bg-hover transition-colors cursor-pointer items-center text-nowrap overflow-hidden",
                 !isOpen && "justify-center",
               )}
-              title={user?.name}
             >
               <span className="shrink-0 w-8 h-8 rounded-full bg-accent-soft text-accent text-xs font-semibold flex items-center justify-center">
                 {initials(user?.name)}

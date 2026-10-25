@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { History } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { Badge, DataTable, EmptyState, Pagination, Spinner } from "@/components/ui"
+import { Badge, DataTable, EmptyState, Pagination, SkeletonTable } from "@/components/ui"
 import { productsService } from "@/services/resources"
 import { formatDateTime, formatNumber } from "@/lib/format"
 import { MOVEMENT_LABEL } from "./labels"
@@ -30,7 +30,7 @@ export function StockMovements({ productId, unit }: { productId: number; unit: s
         <History size={16} /> Movimentações
       </h3>
       {isLoading ? (
-        <Spinner />
+        <SkeletonTable rows={4} cols={[1.5, 1, 1, 2]} />
       ) : isError ? (
         <p className="text-sm text-red-500">Não foi possível carregar as movimentações.</p>
       ) : (

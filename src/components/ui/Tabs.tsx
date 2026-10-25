@@ -20,7 +20,7 @@ export function Tabs<K extends string>({
   className?: string
 }) {
   return (
-    <div role="tablist" className={cn("shrink-0 flex gap-4 overflow-x-auto border-b border-line px-4", className)}>
+    <div role="tablist" className={cn("shrink-0 flex gap-4 overflow-x-auto border-b border-line px-4 mb-4", className)}>
       {tabs
         .filter((t) => !t.hidden)
         .map((t) => {

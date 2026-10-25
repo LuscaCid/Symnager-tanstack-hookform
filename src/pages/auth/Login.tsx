@@ -1,10 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { AuthSkeleton } from "@/components/skeletons/PageSkeletons"
 import { LogIn, Server } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom"
 import { z } from "zod"
-import { Button, Spinner, TextField } from "@/components/ui"
+import { Button, TextField } from "@/components/ui"
 import { useAuth } from "@/contexts/Auth-context"
 import { getErrorMessage } from "@/service/api"
 import OfflineScreen from "./Offline"
@@ -28,7 +29,7 @@ export default function Login() {
     formState: { errors, isSubmitting },
   } = useForm<FormType>({ resolver: zodResolver(schema), defaultValues: { login: "", password: "" } })
 
-  if (status === "loading") return <Spinner className="h-full" />
+  if (status === "loading") return <AuthSkeleton />
   if (status === "offline") return <OfflineScreen />
   if (status === "needs-setup") return <Navigate to="/setup" replace />
   if (status === "authenticated") return <Navigate to="/" replace />

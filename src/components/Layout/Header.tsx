@@ -1,4 +1,5 @@
 import { SidebarContext } from "../../contexts/Sidebar-context"
+import { Tooltip } from "@/components/ui/Tooltip"
 import { PanelLeft, Plus, Rocket, Search } from "lucide-react"
 import { useContextSelector } from "use-context-selector"
 import { useCallback, useState } from "react"
@@ -40,13 +41,14 @@ export function Header() {
       }}
     >
       <div className="flex items-center gap-1.5">
-        <button
-          aria-label="Abrir ou fechar menu"
-          title="Menu"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted hover:bg-hover hover:text-fg transition-colors"
-          onClick={handleOpenOrClose}>
-          <PanelLeft size={18}/>
-        </button>
+        <Tooltip content="Mostrar/ocultar menu">
+          <button
+            aria-label="Abrir ou fechar menu"
+            className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted hover:bg-hover hover:text-fg transition-colors"
+            onClick={handleOpenOrClose}>
+            <PanelLeft size={18}/>
+          </button>
+        </Tooltip>
         <span className="flex items-center gap-2 pl-1 pr-2 pointer-events-none">
           <span className="w-6 h-6 rounded-md bg-accent text-accent-fg flex items-center justify-center">
             <Rocket size={13} strokeWidth={2.2} />
@@ -68,13 +70,14 @@ export function Header() {
 
       <div className="flex items-center gap-1.5 h-full">
         <ConnectionIndicator />
-        <button
-          onClick={() => navigate("/recepcao")}
-          title="Nova OS (Ctrl+Shift+O)"
-          className="h-8 flex items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium bg-accent text-accent-fg hover:bg-accent-strong shadow-sm transition-colors"
-        >
-          <Plus size={15} /> <span className="hidden sm:inline">Nova OS</span>
-        </button>
+        <Tooltip content="Abrir nova ordem de serviço" shortcut="Ctrl Shift O">
+          <button
+            onClick={() => navigate("/recepcao")}
+            className="h-8 flex items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium bg-accent text-accent-fg hover:bg-accent-strong shadow-sm transition-colors"
+          >
+            <Plus size={15} /> <span className="hidden sm:inline">Nova OS</span>
+          </button>
+        </Tooltip>
         {bridge && <span className="w-px h-5 bg-line mx-1.5" />}
         <WindowControls />
       </div>

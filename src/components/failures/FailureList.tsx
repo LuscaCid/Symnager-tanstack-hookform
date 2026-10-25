@@ -5,21 +5,7 @@ import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { FAILURE_CATEGORIES, type DeliveryFailure, type FailureCategory } from "@/@types/api"
 import { failuresService } from "@/services/resources"
-import {
-  Badge,
-  Button,
-  ConfirmDialog,
-  DataTable,
-  EmptyState,
-  ErrorState,
-  IconButton,
-  ListSkeleton,
-  Modal,
-  Pagination,
-  SearchInput,
-  SelectField,
-  TextAreaField,
-} from "@/components/ui"
+import { Badge, Button, ConfirmDialog, DataTable, EmptyState, ErrorState, IconButton, Modal, Pagination, SearchInput, SelectField, TextAreaField, Tooltip, SkeletonTable } from "@/components/ui"
 import { useHasRole } from "@/contexts/Auth-context"
 import { useDebounce } from "@/lib/hooks"
 import { FAILURE_CATEGORY_LABEL, formatDateTime, formatOrderNumber, formatRelative } from "@/lib/format"
@@ -112,7 +98,7 @@ export function FailureList({ params, category, onCategoryChange, q, onQChange }
       </div>
 
       {isLoading ? (
-        <ListSkeleton count={3} />
+        <SkeletonTable rows={5} cols={[1, 2, 2, 2, 1, 1]} />
       ) : isError ? (
         <ErrorState message="Erro ao carregar as falhas." onRetry={() => refetch()} />
       ) : (
@@ -146,17 +132,23 @@ export function FailureList({ params, category, onCategoryChange, q, onQChange }
                 key: "reason",
                 header: "Motivo",
                 render: (f) => (
-                  <span className="block" title={f.description ?? undefined}>
-                    {f.reason}
-                    {f.resolution && <span className="block text-xs text-faint truncate max-w-xs">↳ {f.resolution}</span>}
-                  </span>
+                  <Tooltip content={f.description ?? undefined}>
+                    <span className="block">
+                      {f.reason}
+                      {f.resolution && <span className="block text-xs text-faint truncate max-w-xs">↳ {f.resolution}</span>}
+                    </span>
+                  </Tooltip>
                 ),
               },
               {
                 key: "date",
                 header: "Ocorrência",
                 hideOnMobile: true,
-                render: (f) => <span title={formatDateTime(f.occurred_at)}>{formatRelative(f.occurred_at)}</span>,
+                render: (f) => (
+                  <Tooltip content={formatDateTime(f.occurred_at)}>
+                    <span>{formatRelative(f.occurred_at)}</span>
+                  </Tooltip>
+                ),
               },
               {
                 key: "status",

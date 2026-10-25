@@ -139,7 +139,7 @@ function DesktopConnection() {
       </div>
 
       {config.mode === "local" ? (
-        <div className="flex flex-col gap-2 border border-line rounded-md p-2 text-sm">
+        <div className="flex flex-col gap-3 border border-line rounded-lg p-4 text-sm">
           <p>
             <strong>Status:</strong>{" "}
             {runtime?.apiStatus === "running" ? (

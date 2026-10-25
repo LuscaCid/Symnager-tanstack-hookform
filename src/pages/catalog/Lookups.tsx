@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { CatalogListSkeleton } from "@/components/skeletons/PageSkeletons"
 import { ArrowDown, ArrowUp, Check, ListChecks, Pencil, Plus, Trash2, X } from "lucide-react"
 import { FormEvent, useState } from "react"
 import { useSearchParams } from "react-router-dom"
@@ -11,7 +12,6 @@ import {
   ErrorState,
   IconButton,
   inputClass,
-  ListSkeleton,
   Page,
   PageBody,
   PageHeader,
@@ -186,7 +186,7 @@ function LookupList({ kind, canWrite }: { kind: LookupKind; canWrite: boolean })
 
   return (
     <div className="flex flex-col gap-3 max-w-2xl">
-      <p className="text-sm text-muted border border-line  rounded-md p-2">{HINTS[kind]}</p>
+      <p className="text-[13px] text-muted bg-subtle/60 rounded-lg px-3 py-2">{HINTS[kind]}</p>
       {canWrite && (
         <form onSubmit={submit} className="flex gap-2">
           <label htmlFor={`new-${kind}`} className="sr-only">
@@ -206,7 +206,7 @@ function LookupList({ kind, canWrite }: { kind: LookupKind; canWrite: boolean })
         </form>
       )}
       {list.isLoading ? (
-        <ListSkeleton count={2} />
+        <CatalogListSkeleton rows={5} />
       ) : list.isError ? (
         <ErrorState message="Erro ao carregar os itens." onRetry={() => list.refetch()} />
       ) : items.length === 0 ? (

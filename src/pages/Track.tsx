@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
+import { TrackResultSkeleton } from "@/components/skeletons/PageSkeletons"
 import { CheckCircle2, Circle, Search } from "lucide-react"
 import { FormEvent, useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import axios from "axios"
-import { Button, Spinner, StatusBadge, TextField } from "@/components/ui"
+import { Button, StatusBadge, TextField } from "@/components/ui"
 import { trackService } from "@/services/resources"
 import { setApiBaseUrl } from "@/service/api"
 import { resolveApiBaseUrl } from "@/lib/runtime"
@@ -65,7 +66,7 @@ export default function Track() {
           Consultar
         </Button>
       </form>
-      {isFetching && <Spinner />}
+      {isFetching && <TrackResultSkeleton />}
       {error && (
         <p role="alert" className="text-sm text-red-500">
           {notFound ? "Nenhuma ordem de serviço encontrada com este código." : "Não foi possível consultar agora. Tente mais tarde."}

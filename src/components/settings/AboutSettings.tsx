@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { Info, Keyboard, ShieldCheck } from "lucide-react"
 import { ReactNode } from "react"
-import { Panel, Spinner } from "@/components/ui"
+import { Panel, BoneLines } from "@/components/ui"
 import { useAuth } from "@/contexts/Auth-context"
 import { healthService } from "@/services/resources"
 import { bridge, isDesktop } from "@/lib/runtime"
@@ -32,7 +32,7 @@ export function AboutSettings() {
     <div className="flex flex-col gap-3">
       <Panel title="Sobre o Symnager" icon={Info}>
         {runtime.isLoading || health.isLoading ? (
-          <Spinner />
+          <BoneLines lines={4} />
         ) : (
           <dl className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1 text-sm">
             <Row label="Aplicativo">{isDesktop ? `Desktop ${runtime.data?.version ?? ""}` : "Web"}</Row>

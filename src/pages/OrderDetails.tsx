@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { OrderDetailsSkeleton } from "@/components/skeletons/PageSkeletons"
 import axios from "axios"
 import {
   AlertTriangle,
@@ -28,10 +29,10 @@ import {
   Page,
   PageHeader,
   PriorityBadge,
-  Spinner,
   SplitPane,
   StatusBadge,
   Tabs,
+  Tooltip,
 } from "@/components/ui"
 import { OrderDataForm } from "@/components/orders/OrderDataForm"
 import { OrderItemsTab } from "@/components/orders/OrderItemsTab"
@@ -78,7 +79,7 @@ export default function OrderDetails() {
     },
   })
 
-  if (isLoading) return <Spinner className="w-full" />
+  if (isLoading) return <OrderDetailsSkeleton />
   if (isError || !order) {
     const notFound = axios.isAxiosError(error) && error.response?.status === 404
     return (
@@ -137,7 +138,7 @@ export default function OrderDetails() {
           <>
             <IconButton icon={ArrowLeft} label="Voltar" onClick={() => navigate(-1)} />
             <StatusMenu order={order} onSelect={(s) => request(order, s)} disabled={changingStatus} />
-            <Button size="sm" icon={MessageCircle} onClick={notifyClient} title="Enviar mensagem pelo WhatsApp">
+            <Button size="sm" icon={MessageCircle} onClick={notifyClient} tooltip="Enviar mensagem pelo WhatsApp">
               Avisar cliente
             </Button>
             <Button size="sm" variant="primary" icon={Printer} onClick={() => navigate(`/ordens/${order.order_id}/imprimir`)}>
@@ -149,24 +150,23 @@ export default function OrderDetails() {
       />
 
       {/* faixa de resumo */}
-      <div className="shrink-0 flex flex-wrap items-center gap-2 px-2 py-1.5 border-b border-line text-sm">
+      <div className="shrink-0 flex flex-wrap items-center gap-2 px-4 pb-3 border-b border-line text-sm">
         <StatusBadge status={order.status} />
         <PriorityBadge priority={order.priority} />
-        <Link
-          to={`/clientes/${order.owner_id}`}
-          className="inline-flex items-center gap-1 font-semibold hover:underline"
-          title={[order.owner?.phone && formatPhone(order.owner.phone), order.owner?.document && formatDocument(order.owner.document)].filter(Boolean).join(" · ")}
-        >
-          <User size={14} /> {order.owner?.name ?? "Cliente"}
-        </Link>
+        <Tooltip content={[order.owner?.phone && formatPhone(order.owner.phone), order.owner?.document && formatDocument(order.owner.document)].filter(Boolean).join(" · ")}>
+          <Link to={`/clientes/${order.owner_id}`} className="inline-flex items-center gap-1 font-semibold hover:underline">
+            <User size={14} /> {order.owner?.name ?? "Cliente"}
+          </Link>
+        </Tooltip>
         {order.owner?.phone && <span className="text-muted ">{formatPhone(order.owner.phone)}</span>}
-        <button
-          onClick={copyTracking}
-          className="inline-flex items-center gap-1 font-mono text-xs px-1.5 py-0.5 rounded-md border border-line hover:bg-hover  transition duration-200"
-          title="Copiar código de rastreio"
-        >
-          {order.tracking_code} <Copy size={12} />
-        </button>
+        <Tooltip content="Copiar código de rastreio">
+          <button
+            onClick={copyTracking}
+            className="inline-flex items-center gap-1 font-mono text-xs px-1.5 py-0.5 rounded-md border border-line hover:bg-hover transition-colors"
+          >
+            {order.tracking_code} <Copy size={12} />
+          </button>
+        </Tooltip>
         {order.due_date && !final && (
           <span className={cn("inline-flex items-center gap-1", overdue ? "text-red-500 font-semibold" : "text-muted ")}>
             {overdue && <AlertTriangle size={14} />} Previsão {formatDate(order.due_date)}
@@ -200,7 +200,7 @@ export default function OrderDetails() {
       </div>
 
       {readOnly && (
-        <p className="shrink-0 px-2 py-1 text-xs bg-subtle text-fg ">
+        <p className="shrink-0 px-4 py-2 text-xs bg-subtle text-muted">
           Esta OS está {order.status === "ENTREGUE" ? "entregue" : "cancelada"} e só pode ser alterada por um administrador. Comentários e
           falhas continuam liberados.
         </p>
@@ -229,7 +229,7 @@ export default function OrderDetails() {
                   { key: "falhas", label: `Falhas${order.failures?.length ? ` (${order.failures.length})` : ""}`, icon: AlertTriangle },
                 ]}
               />
-              <div className="flex-1 min-h-0 overflow-y-auto p-2">
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
                 {tab === "itens" && <OrderItemsTab order={order} readOnly={readOnly} />}
                 {tab === "pagamentos" && <OrderPaymentsTab order={order} readOnly={readOnly} />}
                 {tab === "historico" && <OrderHistoryTab order={order} />}

@@ -1,6 +1,7 @@
 import { ButtonHTMLAttributes, forwardRef } from "react"
 import { Loader, LucideIcon } from "lucide-react"
 import { cn } from "@/lib/cn"
+import { Tooltip } from "./Tooltip"
 
 type Variant = "default" | "primary" | "success" | "danger" | "ghost"
 type Size = "sm" | "md"
@@ -10,6 +11,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size
   icon?: LucideIcon
   loading?: boolean
+  /** dica exibida ao passar o mouse/focar (substitui o atributo title) */
+  tooltip?: string
 }
 
 const variants: Record<Variant, string> = {
@@ -26,10 +29,10 @@ const sizes: Record<Size, string> = {
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "default", size = "md", icon: Icon, loading, className, children, disabled, type = "button", ...props },
+  { variant = "default", size = "md", icon: Icon, loading, className, children, disabled, type = "button", tooltip, ...props },
   ref,
 ) {
-  return (
+  const button = (
     <button
       ref={ref}
       type={type}
@@ -52,20 +55,27 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {children}
     </button>
   )
+  return tooltip ? <Tooltip content={tooltip}>{button}</Tooltip> : button
 })
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: LucideIcon
   label: string
   tone?: "default" | "danger"
+  tooltipSide?: "top" | "right" | "bottom" | "left"
 }
 
-export function IconButton({ icon: Icon, label, tone = "default", className, type = "button", ...props }: IconButtonProps) {
+/** Botão só com ícone: o rótulo vira aria-label e tooltip. */
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+  { icon: Icon, label, tone = "default", className, type = "button", tooltipSide, ...props },
+  ref,
+) {
   return (
+    <Tooltip content={label} side={tooltipSide}>
     <button
+      ref={ref}
       type={type}
       aria-label={label}
-      title={label}
       className={cn(
         "inline-flex items-center justify-center h-8 w-8 rounded-lg text-muted transition-colors duration-150",
         "hover:bg-hover hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed",
@@ -77,5 +87,6 @@ export function IconButton({ icon: Icon, label, tone = "default", className, typ
     >
       <Icon size={17} />
     </button>
+    </Tooltip>
   )
-}
+})

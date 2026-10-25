@@ -3,7 +3,7 @@ import { ClipboardList, Save } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Button, Checkbox, Panel, Spinner, TextAreaField, TextField } from "@/components/ui"
+import { Button, Checkbox, Panel, TextAreaField, TextField, SkeletonForm } from "@/components/ui"
 import { useSettings } from "@/lib/hooks"
 import { formatOrderNumber } from "@/lib/format"
 import { withDefaults } from "./defaults"
@@ -43,7 +43,7 @@ export function OrdersSettings() {
     reset({ ...o, public_url: o.public_url ?? "" })
   }, [data, reset])
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <SkeletonForm fields={6} columns={2} />
 
   const prefix = watch("prefix") || "OS"
 

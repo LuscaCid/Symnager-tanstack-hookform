@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { DashboardContentSkeleton } from "@/components/skeletons/PageSkeletons"
 import {
   AlarmClock,
   AlertTriangle,
@@ -20,10 +21,10 @@ import {
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { dashboardService } from "@/services/resources"
-import { Button, DataTable, EmptyState, ErrorState, ListSkeleton, Page, PageBody, PageHeader, Panel, StatCard } from "@/components/ui"
+import { Button, DataTable, EmptyState, ErrorState, Page, PageBody, PageHeader, Panel, StatCard } from "@/components/ui"
 import { HistoryBox } from "@/components/Home/HistoryComponents/HistoryBox"
 import { PeriodSelector, usePeriod } from "@/components/dashboard/PeriodSelector"
-import { ChartCard, ChartSkeleton, HBarChart, MiniTable, NoData, TimeSeriesChart, shortDay } from "@/components/dashboard/charts"
+import { ChartCard, HBarChart, MiniTable, NoData, TimeSeriesChart, shortDay } from "@/components/dashboard/charts"
 import { useChartTheme } from "@/components/dashboard/chartTheme"
 import { formatHours, formatMoney, formatNumber, formatPercent, STATUS_HEX, STATUS_LABEL } from "@/lib/format"
 import { useCurrentUser } from "@/contexts/Auth-context"
@@ -34,21 +35,11 @@ function greeting() {
   return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"
 }
 
-function KpiSkeleton() {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
-      {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} className="h-[84px] rounded-xl bg-subtle animate-pulse" />
-      ))}
-    </div>
-  )
-}
-
 function Kpis({ data }: { data: DashboardData }) {
   const navigate = useNavigate()
   const k = data.kpis
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
       <StatCard icon={ClipboardList} label="Em aberto" value={formatNumber(k.open)} hint="OS não finalizadas" onClick={() => navigate("/ordens")} />
       <StatCard
         icon={AlarmClock}
@@ -99,7 +90,7 @@ function Charts({ data }: { data: DashboardData }) {
   const brands = data.top_brands.slice(0, 8).map((d) => ({ key: d.key, label: d.key || "Não informada", value: d.count, color: t.series[1] }))
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
       <ChartCard
         title="OS por dia"
         icon={ClipboardList}
@@ -139,7 +130,7 @@ function Charts({ data }: { data: DashboardData }) {
           <NoData text="Nenhuma OS" />
         )}
       </ChartCard>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ChartCard title="Top equipamentos" icon={Smartphone} table={<MiniTable head={["Tipo", "OS"]} rows={devices.map((d) => [d.label, d.value])} />}>
           {devices.length ? <HBarChart items={devices} /> : <NoData />}
         </ChartCard>
@@ -154,7 +145,7 @@ function Charts({ data }: { data: DashboardData }) {
 function Rankings({ data }: { data: DashboardData }) {
   const navigate = useNavigate()
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-2">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
       <Panel title="Serviços mais realizados" icon={Wrench} bodyClassName="p-2">
         <DataTable
           rows={data.top_services.slice(0, 8)}
@@ -233,21 +224,14 @@ export default function Dashboard() {
           </Button>
         }
       />
-      <div className="shrink-0 px-2 pt-2">
+      <div className="shrink-0 px-4 pb-4">
         <PeriodSelector value={period} />
       </div>
-      <PageBody className="flex flex-col gap-2">
+      <PageBody className="flex flex-col gap-4">
         {isError && !data ? (
           <ErrorState message="Não foi possível carregar o dashboard." onRetry={() => refetch()} />
         ) : isLoading || !data ? (
-          <>
-            <KpiSkeleton />
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
-              <ChartSkeleton />
-              <ChartSkeleton />
-            </div>
-            <ListSkeleton count={2} />
-          </>
+          <DashboardContentSkeleton />
         ) : (
           <>
             <Kpis data={data} />
@@ -255,7 +239,7 @@ export default function Dashboard() {
             <Rankings data={data} />
             <Panel title="OS recentes" icon={ClipboardList} bodyClassName="p-2">
               {data.recent_orders.length ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                   {data.recent_orders.slice(0, 9).map((order) => (
                     <HistoryBox key={order.order_id} order={order} />
                   ))}

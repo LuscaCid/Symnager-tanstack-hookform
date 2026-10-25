@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { PrintSkeleton } from "@/components/skeletons/PageSkeletons"
 import { ArrowLeft, FileDown, Printer } from "lucide-react"
 import QRCode from "qrcode"
 import { useEffect, useMemo, useState } from "react"
@@ -6,7 +7,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import type { PrinterInfo } from "@/@types/bridge"
 import type { Settings } from "@/@types/api"
-import { Button, Checkbox, ErrorState, SelectField, Spinner, TextField } from "@/components/ui"
+import { Button, Checkbox, ErrorState, SelectField, TextField } from "@/components/ui"
 import { A4Document, DEFAULT_PRINT_SETTINGS, ThermalDocument } from "@/components/orders/PrintDocument"
 import { cn } from "@/lib/cn"
 import { formatOrderNumber } from "@/lib/format"
@@ -137,7 +138,7 @@ export default function OrderPrint() {
     }
   }
 
-  if (isLoading || settingsQuery.isLoading) return <Spinner className="h-full" />
+  if (isLoading || settingsQuery.isLoading) return <PrintSkeleton />
   if (isError || !order) return <ErrorState message="Não foi possível carregar a OS para impressão." onRetry={() => refetch()} />
 
   const docProps = { order, settings, qrCode }

@@ -2,16 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { ChevronDown, ChevronRight, ShieldCheck } from "lucide-react"
 import { Fragment, useEffect, useState } from "react"
 import type { AuditLog } from "@/@types/api"
-import {
-  EmptyState,
-  ErrorState,
-  ListSkeleton,
-  Page,
-  PageBody,
-  PageHeader,
-  Pagination,
-  SearchInput,
-} from "@/components/ui"
+import { EmptyState, ErrorState, Page, PageBody, PageHeader, Pagination, SearchInput, SkeletonTable } from "@/components/ui"
 import { auditService } from "@/services/resources"
 import { useDebounce } from "@/lib/hooks"
 import { formatDateTime } from "@/lib/format"
@@ -103,7 +94,7 @@ export default function Audit() {
       <PageBody className="flex flex-col gap-2">
         <SearchInput value={query} onChange={setQuery} placeholder="Pesquisar por ação, entidade, usuário ou IP" />
         {isLoading ? (
-          <ListSkeleton count={3} />
+          <SkeletonTable rows={10} cols={[0.3, 1.5, 1.5, 2, 1.5, 1]} />
         ) : isError ? (
           <ErrorState message="Erro ao carregar a auditoria." onRetry={() => refetch()} />
         ) : !data || data.data.length === 0 ? (

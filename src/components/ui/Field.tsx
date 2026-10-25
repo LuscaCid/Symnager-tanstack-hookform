@@ -1,4 +1,4 @@
-import { forwardRef, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react"
+import { forwardRef, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/cn"
 
@@ -53,26 +53,6 @@ export const TextField = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLIn
           className={cn(inputClass, error && errorClass, className)}
           {...props}
         />
-      </FieldWrapper>
-    )
-  },
-)
-
-export const SelectField = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement> & BaseProps>(
-  function SelectField({ label, error, hint, hideLabel, wrapperClassName, className, id, name, children, ...props }, ref) {
-    const fieldId = id ?? name ?? label
-    return (
-      <FieldWrapper label={label} htmlFor={fieldId} error={error} hint={hint} hideLabel={hideLabel} className={wrapperClassName}>
-        <select
-          ref={ref}
-          id={fieldId}
-          name={name}
-          aria-invalid={!!error}
-          className={cn(inputClass, "pr-8 cursor-pointer", error && errorClass, className)}
-          {...props}
-        >
-          {children}
-        </select>
       </FieldWrapper>
     )
   },

@@ -41,6 +41,14 @@ export default {
         lg: '12px',
         xl: '16px',
       },
+      keyframes: {
+        'tooltip-in': { from: { opacity: '0', transform: 'translateY(2px) scale(0.98)' }, to: { opacity: '1', transform: 'none' } },
+        'pop-in': { from: { opacity: '0', transform: 'translateY(-4px) scale(0.98)' }, to: { opacity: '1', transform: 'none' } },
+      },
+      animation: {
+        'tooltip-in': 'tooltip-in 120ms ease-out',
+        'pop-in': 'pop-in 140ms ease-out',
+      },
       boxShadow: {
         sm: '0 1px 2px rgb(var(--c-shadow) / 0.06)',
         DEFAULT: '0 1px 3px rgb(var(--c-shadow) / 0.08), 0 1px 2px rgb(var(--c-shadow) / 0.04)',

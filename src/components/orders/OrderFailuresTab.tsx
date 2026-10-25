@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, CheckCircle2, Plus } from "lucide-react"
 import { FormEvent, useState } from "react"
 import { FAILURE_CATEGORIES, type DeliveryFailure, type FailureCategory, type Order } from "@/@types/api"
-import { Badge, Button, EmptyState, Modal, SelectField, TextAreaField, TextField } from "@/components/ui"
+import { Badge, Button, ComboboxField, EmptyState, Modal, SelectField, TextAreaField, TextField } from "@/components/ui"
 import { cn } from "@/lib/cn"
 import { FAILURE_CATEGORY_LABEL, formatDateTime, toDateInput } from "@/lib/format"
 import { useLookups } from "@/lib/hooks"
@@ -93,18 +93,14 @@ export function OrderFailuresTab({ order }: { order: Order }) {
               ))}
             </SelectField>
             <TextField label="Data" type="date" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} />
-            <TextField
+            <ComboboxField
               label="Motivo"
               wrapperClassName="sm:col-span-2"
-              list="failure-reasons"
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onValueChange={setReason}
+              options={(reasons.data ?? []).map((r) => r.name)}
               placeholder="Escolha da lista ou digite"
-              autoFocus
             />
-            <datalist id="failure-reasons">
-              {reasons.data?.map((r) => <option key={r.lookup_id} value={r.name} />)}
-            </datalist>
             <TextAreaField
               label="Detalhes"
               wrapperClassName="sm:col-span-2"

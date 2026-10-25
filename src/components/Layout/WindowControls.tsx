@@ -1,4 +1,5 @@
 import { Copy, Minus, Square, X } from "lucide-react"
+import { Tooltip } from "@/components/ui/Tooltip"
 import { useCallback, useEffect, useState } from "react"
 import type { WindowState } from "@/@types/bridge"
 import { bridge } from "@/lib/runtime"
@@ -34,27 +35,31 @@ export function WindowControls({ className }: { className?: string }) {
 
   return (
     <div className={cn("flex items-stretch h-full self-stretch", className)}>
-      <button type="button" aria-label="Minimizar" title="Minimizar" onClick={() => controls.minimize()} className={cn(base, "hover:bg-hover hover:text-fg")}>
-        <Minus size={15} />
-      </button>
-      <button
-        type="button"
-        aria-label={restore ? "Restaurar" : "Maximizar"}
-        title={restore ? "Restaurar (duplo clique no cabeçalho)" : "Maximizar (duplo clique no cabeçalho)"}
-        onClick={() => controls.toggleMaximize()}
-        className={cn(base, "hover:bg-hover hover:text-fg")}
-      >
-        {restore ? <Copy size={13} className="-scale-x-100" /> : <Square size={12} />}
-      </button>
-      <button
-        type="button"
-        aria-label="Fechar"
-        title="Fechar"
-        onClick={() => controls.close()}
-        className={cn(base, "hover:bg-[#c42b1c] hover:text-white")}
-      >
-        <X size={16} />
-      </button>
+      <Tooltip content="Minimizar">
+        <button type="button" aria-label="Minimizar" onClick={() => controls.minimize()} className={cn(base, "hover:bg-hover hover:text-fg")}>
+          <Minus size={15} />
+        </button>
+      </Tooltip>
+      <Tooltip content={restore ? "Restaurar" : "Maximizar"} shortcut="F11 tela cheia">
+        <button
+          type="button"
+          aria-label={restore ? "Restaurar" : "Maximizar"}
+          onClick={() => controls.toggleMaximize()}
+          className={cn(base, "hover:bg-hover hover:text-fg")}
+        >
+          {restore ? <Copy size={13} className="-scale-x-100" /> : <Square size={12} />}
+        </button>
+      </Tooltip>
+      <Tooltip content="Fechar" align="end">
+        <button
+          type="button"
+          aria-label="Fechar"
+          onClick={() => controls.close()}
+          className={cn(base, "hover:bg-[#c42b1c] hover:text-white")}
+        >
+          <X size={16} />
+        </button>
+      </Tooltip>
     </div>
   )
 }

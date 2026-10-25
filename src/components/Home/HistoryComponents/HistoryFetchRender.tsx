@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { ClipboardList } from "lucide-react"
 import { HistoryRender } from "./HistoryRendering"
 import { ordersService } from "@/services/resources"
-import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui"
+import { EmptyState, ErrorState, SkeletonList } from "@/components/ui"
 import { useDebounce } from "@/lib/hooks"
 
 interface Props {
@@ -20,7 +20,7 @@ export function HistoryFetchAndRendering({query} : Props) {
   })
 
   if(isLoading) {
-    return <ListSkeleton />
+    return <SkeletonList count={6} />
   }
   if(isError) {
     return <ErrorState message="Erro ao carregar o histórico." onRetry={() => refetch()} />

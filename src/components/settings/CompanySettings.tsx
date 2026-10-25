@@ -4,7 +4,7 @@ import { ChangeEvent, useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
-import { Button, Panel, Spinner, TextField } from "@/components/ui"
+import { Button, Panel, TextField, SkeletonForm } from "@/components/ui"
 import { useHasRole } from "@/contexts/Auth-context"
 import { useSettings } from "@/lib/hooks"
 import { formatDocument, formatPhone, formatZipcode, onlyDigits } from "@/lib/format"
@@ -113,7 +113,7 @@ export function CompanySettings() {
     }
   }
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <SkeletonForm fields={6} columns={2} />
 
   const savedLogo = withDefaults(data).company.logo
   const logoChanged = logo !== savedLogo

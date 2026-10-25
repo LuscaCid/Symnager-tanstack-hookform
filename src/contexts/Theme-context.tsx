@@ -1,5 +1,5 @@
 import { ContextProviderProps, IContext, Theme } from "@/@types/ThemeContext";
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { createContext } from "use-context-selector";
 
 export const ThemeContext = createContext({} as IContext)
@@ -20,14 +20,20 @@ function readTheme(): Theme {
 export function ThemeProvider ({ children }: ContextProviderProps) {
   const [theme, setTheme] = useState<Theme>(readTheme)
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    document.documentElement.style.colorScheme = theme
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    // desliga transições durante a troca: sem isso cada elemento anima a cor em ritmos diferentes ("pisca")
+    root.classList.add('theme-switching')
+    root.classList.toggle('dark', theme === 'dark')
+    root.style.colorScheme = theme
+    void root.offsetHeight // força o navegador a aplicar as novas cores já sem transição
+    const frame = requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')))
     try {
       localStorage.setItem(STORAGE_KEY, theme)
     } catch {
       // ignora
     }
+    return () => cancelAnimationFrame(frame)
   }, [theme])
 
   function toggleTheme(themeSet : Theme){

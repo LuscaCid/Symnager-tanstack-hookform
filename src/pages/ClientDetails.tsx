@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { ClientDetailsSkeleton } from "@/components/skeletons/PageSkeletons"
 import { ArrowLeft, ClipboardList, Pencil, Plus, Trash2, Wallet, CalendarClock, Wrench } from "lucide-react"
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
@@ -6,20 +7,7 @@ import { toast } from "sonner"
 import { clientsService } from "@/services/resources"
 import { ClientForm } from "@/components/User/ClientForm"
 import { HistoryBox } from "@/components/Home/HistoryComponents/HistoryBox"
-import {
-  Button,
-  ConfirmDialog,
-  EmptyState,
-  ErrorState,
-  IconButton,
-  ListSkeleton,
-  Page,
-  PageHeader,
-  Pagination,
-  SplitPane,
-  Spinner,
-  StatCard,
-} from "@/components/ui"
+import { Button, ConfirmDialog, EmptyState, ErrorState, IconButton, Page, PageHeader, Pagination, SplitPane, StatCard, SkeletonList } from "@/components/ui"
 import { useHasRole } from "@/contexts/Auth-context"
 import { formatDocument, formatMoney, formatPhone, formatRelative } from "@/lib/format"
 
@@ -55,7 +43,7 @@ export default function ClientDetails () {
     })
 
     if(isLoading) {
-        return <Spinner className="w-full" />
+        return <ClientDetailsSkeleton />
     }
     if(isError || !data) {
         return (
@@ -83,7 +71,7 @@ export default function ClientDetails () {
                     </>
                 }
             />
-            <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2 p-2">
+            <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-4">
                 <StatCard icon={ClipboardList} label="Ordens de serviço" value={data.stats?.orders_total ?? data._count?.orders ?? 0} />
                 <StatCard icon={Wrench} label="Em aberto" value={data.stats?.orders_open ?? 0} tone={data.stats?.orders_open ? 'warning' : undefined} />
                 <StatCard icon={Wallet} label="Total gasto" value={formatMoney(data.stats?.total_spent)} />
@@ -94,7 +82,7 @@ export default function ClientDetails () {
                     storageKey="cliente-detalhes"
                     defaultSize={55}
                     left={
-                        <div className="h-full overflow-y-auto p-2">
+                        <div className="h-full overflow-y-auto p-4">
                             <h2 className="text-sm font-semibold mb-3">Editar dados</h2>
                             <ClientForm client={data} submitLabel="Salvar alterações" />
                         </div>
@@ -102,8 +90,8 @@ export default function ClientDetails () {
                     right={
                         <div className="h-full flex flex-col min-h-0">
                             <h2 className="shrink-0 px-4 pt-4 text-sm font-semibold">Histórico de OS</h2>
-                            <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2">
-                                {orders.isLoading ? <ListSkeleton count={3} /> :
+                            <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-2">
+                                {orders.isLoading ? <SkeletonList count={3} /> :
                                  orders.data && orders.data.data.length > 0 ? (
                                     orders.data.data.map((order) => <HistoryBox key={order.order_id} order={order} />)
                                  ) : (

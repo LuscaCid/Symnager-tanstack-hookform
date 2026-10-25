@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
+import { FailuresContentSkeleton } from "@/components/skeletons/PageSkeletons"
 import { AlertTriangle, CheckCircle2, Clock, Gauge, Info, Lightbulb, ListChecks, Map as MapIcon, RefreshCw, Smartphone, TrendingUp, Users } from "lucide-react"
 import { useState } from "react"
 import { failuresService } from "@/services/resources"
 import { Button, DataTable, EmptyState, ErrorState, Page, PageBody, PageHeader, Panel, StatCard } from "@/components/ui"
 import { PeriodSelector, usePeriod } from "@/components/dashboard/PeriodSelector"
-import { ChartCard, ChartSkeleton, HBarChart, MiniTable, NoData, TimeSeriesChart, shortDay } from "@/components/dashboard/charts"
+import { ChartCard, HBarChart, MiniTable, NoData, TimeSeriesChart, shortDay } from "@/components/dashboard/charts"
 import { useChartTheme } from "@/components/dashboard/chartTheme"
 import { Pareto } from "@/components/failures/Pareto"
 import { FailureList } from "@/components/failures/FailureList"
@@ -55,7 +56,7 @@ function StatsCharts({ stats, onCategory, onReason }: { stats: FailureStats; onC
     .sort((a, b) => b.rate - a.rate)
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
       <ChartCard
         title="Mapa de motivos (Pareto)"
         icon={MapIcon}
@@ -88,7 +89,7 @@ function StatsCharts({ stats, onCategory, onReason }: { stats: FailureStats; onC
           ]}
         />
       </Panel>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ChartCard title="Por tipo de equipamento" icon={Smartphone} table={<MiniTable head={["Tipo", "Falhas"]} rows={devices.map((d) => [d.label, d.value])} />}>
           {devices.length ? <HBarChart items={devices} /> : <NoData />}
         </ChartCard>
@@ -127,24 +128,17 @@ export default function Failures() {
           </Button>
         }
       />
-      <div className="shrink-0 px-2 pt-2">
+      <div className="shrink-0 px-4 pb-4">
         <PeriodSelector value={period} />
       </div>
-      <PageBody className="flex flex-col gap-2">
+      <PageBody className="flex flex-col gap-4">
         {isError && !data ? (
           <ErrorState message="Não foi possível carregar as estatísticas de falhas." onRetry={() => refetch()} />
         ) : isLoading || !data ? (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-[84px] rounded-xl bg-subtle animate-pulse" />
-              ))}
-            </div>
-            <ChartSkeleton height={260} />
-          </>
+          <FailuresContentSkeleton />
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
               <StatCard icon={AlertTriangle} label="Falhas no período" value={formatNumber(data.total)} />
               <StatCard icon={Clock} label="Em aberto" value={formatNumber(data.open)} tone={data.open > 0 ? "warning" : undefined} />
               <StatCard icon={CheckCircle2} label="Resolvidas" value={formatNumber(data.resolved)} tone={data.resolved > 0 ? "success" : undefined} />

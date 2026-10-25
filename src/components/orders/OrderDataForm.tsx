@@ -6,7 +6,7 @@ import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 import { PRIORITIES, type Order, type OrderInput } from "@/@types/api"
-import { Button, Panel, SelectField, TextAreaField, TextField } from "@/components/ui"
+import { Button, ComboboxField, Panel, SelectField, TextAreaField, TextField } from "@/components/ui"
 import { useLookups, useTechnicians } from "@/lib/hooks"
 import { PRIORITY_LABEL } from "@/lib/format"
 import { ordersService } from "@/services/resources"
@@ -159,16 +159,17 @@ export function OrderDataForm({ order, readOnly }: { order: Order; readOnly?: bo
                 </option>
               ))}
             </SelectField>
-            <TextField label="Marca" list="os-brands" {...register("brand")} />
-            <datalist id="os-brands">
-              {brands.data?.map((b) => <option key={b.lookup_id} value={b.name} />)}
-            </datalist>
+            <ComboboxField label="Marca" options={(brands.data ?? []).map((b) => b.name)} disabled={readOnly} {...register("brand")} />
             <TextField label="Modelo" {...register("model")} />
             <TextField label="Nº de série / IMEI" {...register("serial")} />
-            <TextField label="Acessórios" list="os-accessories" {...register("accessories")} />
-            <datalist id="os-accessories">
-              {accessories.data?.map((a) => <option key={a.lookup_id} value={a.name} />)}
-            </datalist>
+            <ComboboxField
+              label="Acessórios"
+              placeholder="Nenhum"
+              multiple
+              options={(accessories.data ?? []).map((a) => a.name)}
+              disabled={readOnly}
+              {...register("accessories")}
+            />
             <TextField
               label="Senha / padrão"
               autoComplete="off"

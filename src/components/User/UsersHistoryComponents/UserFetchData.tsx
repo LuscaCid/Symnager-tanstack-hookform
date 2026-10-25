@@ -2,7 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query"
 import { Users } from "lucide-react"
 import { UsersRendering } from "./UserRendering"
 import { clientsService } from "@/services/resources"
-import { Button, EmptyState, ErrorState, ListSkeleton } from "@/components/ui"
+import { Button, EmptyState, ErrorState, SkeletonList } from "@/components/ui"
 import { useDebounce } from "@/lib/hooks"
 
 interface Props {
@@ -22,7 +22,7 @@ export function UserFetch({query} : Props) {
   })
 
   if(isLoading) {
-    return <ListSkeleton />
+    return <SkeletonList count={6} variant="person" />
   }
   if(isError) {
     return <ErrorState message="Erro ao carregar clientes." onRetry={() => refetch()} />

@@ -1,4 +1,5 @@
 import { Check, ClipboardCheck, Minus, X } from "lucide-react"
+import { Tooltip } from "@/components/ui"
 import type { ChecklistEntry } from "@/@types/api"
 import { useLookups } from "@/lib/hooks"
 import { cn } from "@/lib/cn"
@@ -50,13 +51,12 @@ export function ChecklistEditor({ value, onChange, disabled }: ChecklistEditorPr
           <span className="truncate">{entry.item}</span>
           <div role="radiogroup" aria-label={entry.item} className="flex gap-1 shrink-0">
             {STATES.map(({ ok, label, icon: Icon, active }) => (
+              <Tooltip key={String(ok)} content={label}>
               <button
-                key={String(ok)}
                 type="button"
                 role="radio"
                 aria-checked={entry.ok === ok}
                 aria-label={label}
-                title={label}
                 disabled={disabled}
                 onClick={() => set(entry.item, ok)}
                 className={cn(
@@ -66,6 +66,7 @@ export function ChecklistEditor({ value, onChange, disabled }: ChecklistEditorPr
               >
                 <Icon size={14} />
               </button>
+              </Tooltip>
             ))}
           </div>
         </li>
