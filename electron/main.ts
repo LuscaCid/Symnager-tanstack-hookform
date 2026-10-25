@@ -64,8 +64,12 @@ function createWindow() {
     minHeight: 600,
     show: false,
     title: "Symnager",
-    backgroundColor: "#09090b",
+    backgroundColor: "#151517",
     autoHideMenuBar: true,
+    // sem moldura do sistema: a barra de título é o cabeçalho do próprio app (arrastável, com
+    // minimizar / maximizar / fechar). No macOS mantém os botões nativos sobre o cabeçalho.
+    frame: process.platform === "darwin",
+    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
     icon: path.join(app.getAppPath(), "build", "icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -80,6 +84,18 @@ function createWindow() {
   })
 
   mainWindow.once("ready-to-show", () => mainWindow?.show())
+
+  const sendWindowState = () => {
+    if (!mainWindow) return
+    mainWindow.webContents.send("window:state", {
+      maximized: mainWindow.isMaximized(),
+      fullscreen: mainWindow.isFullScreen(),
+      focused: mainWindow.isFocused(),
+    })
+  }
+  for (const event of ["maximize", "unmaximize", "enter-full-screen", "leave-full-screen", "focus", "blur"] as const) {
+    mainWindow.on(event as "maximize", sendWindowState)
+  }
 
   const wc = mainWindow.webContents
   // nunca abrir janelas novas: links externos vão para o navegador padrão

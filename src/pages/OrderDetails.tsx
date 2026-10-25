@@ -149,7 +149,7 @@ export default function OrderDetails() {
       />
 
       {/* faixa de resumo */}
-      <div className="shrink-0 flex flex-wrap items-center gap-2 px-2 py-1.5 border-b border-zinc-300 dark:border-zinc-800 text-sm">
+      <div className="shrink-0 flex flex-wrap items-center gap-2 px-2 py-1.5 border-b border-line text-sm">
         <StatusBadge status={order.status} />
         <PriorityBadge priority={order.priority} />
         <Link
@@ -159,16 +159,16 @@ export default function OrderDetails() {
         >
           <User size={14} /> {order.owner?.name ?? "Cliente"}
         </Link>
-        {order.owner?.phone && <span className="text-zinc-600 dark:text-zinc-400">{formatPhone(order.owner.phone)}</span>}
+        {order.owner?.phone && <span className="text-muted ">{formatPhone(order.owner.phone)}</span>}
         <button
           onClick={copyTracking}
-          className="inline-flex items-center gap-1 font-mono text-xs px-1.5 py-0.5 rounded-md border border-zinc-300 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200"
+          className="inline-flex items-center gap-1 font-mono text-xs px-1.5 py-0.5 rounded-md border border-line hover:bg-hover  transition duration-200"
           title="Copiar código de rastreio"
         >
           {order.tracking_code} <Copy size={12} />
         </button>
         {order.due_date && !final && (
-          <span className={cn("inline-flex items-center gap-1", overdue ? "text-red-500 font-semibold" : "text-zinc-600 dark:text-zinc-400")}>
+          <span className={cn("inline-flex items-center gap-1", overdue ? "text-red-500 font-semibold" : "text-muted ")}>
             {overdue && <AlertTriangle size={14} />} Previsão {formatDate(order.due_date)}
           </span>
         )}
@@ -200,7 +200,7 @@ export default function OrderDetails() {
       </div>
 
       {readOnly && (
-        <p className="shrink-0 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300">
+        <p className="shrink-0 px-2 py-1 text-xs bg-subtle text-fg ">
           Esta OS está {order.status === "ENTREGUE" ? "entregue" : "cancelada"} e só pode ser alterada por um administrador. Comentários e
           falhas continuam liberados.
         </p>

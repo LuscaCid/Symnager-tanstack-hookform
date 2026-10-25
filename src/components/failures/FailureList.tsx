@@ -137,7 +137,7 @@ export function FailureList({ params, category, onCategoryChange, q, onQChange }
                 render: (f) => (
                   <span className="block min-w-0">
                     <strong className="block truncate">{f.order?.owner.name ?? "—"}</strong>
-                    <span className="text-xs text-zinc-500 truncate block">{f.order?.device}</span>
+                    <span className="text-xs text-faint truncate block">{f.order?.device}</span>
                   </span>
                 ),
               },
@@ -148,7 +148,7 @@ export function FailureList({ params, category, onCategoryChange, q, onQChange }
                 render: (f) => (
                   <span className="block" title={f.description ?? undefined}>
                     {f.reason}
-                    {f.resolution && <span className="block text-xs text-zinc-500 truncate max-w-xs">↳ {f.resolution}</span>}
+                    {f.resolution && <span className="block text-xs text-faint truncate max-w-xs">↳ {f.resolution}</span>}
                   </span>
                 ),
               },
@@ -219,7 +219,7 @@ export function FailureList({ params, category, onCategoryChange, q, onQChange }
           </>
         }
       >
-        {resolving?.description && <p className="text-sm mb-2 text-zinc-600 dark:text-zinc-400">{resolving.description}</p>}
+        {resolving?.description && <p className="text-sm mb-2 text-muted ">{resolving.description}</p>}
         <TextAreaField
           label="O que foi feito para resolver?"
           placeholder="Ex.: aparelho refeito em garantia, peça trocada, nova entrega agendada..."

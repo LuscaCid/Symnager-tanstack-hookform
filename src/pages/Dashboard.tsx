@@ -38,7 +38,7 @@ function KpiSkeleton() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
       {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} className="h-[84px] rounded-md bg-zinc-200 dark:bg-zinc-800/80 animate-pulse" />
+        <div key={i} className="h-[84px] rounded-xl bg-subtle animate-pulse" />
       ))}
     </div>
   )
@@ -201,7 +201,7 @@ function Rankings({ data }: { data: DashboardData }) {
               key: "stock",
               header: "Estoque",
               className: "text-right tabular-nums",
-              render: (p) => <span className={p.stock <= 0 ? "text-red-500 font-bold" : "text-amber-600 dark:text-amber-400 font-semibold"}>{formatNumber(p.stock)}</span>,
+              render: (p) => <span className={p.stock <= 0 ? "text-red-500 font-semibold" : "text-amber-600 dark:text-amber-400 font-semibold"}>{formatNumber(p.stock)}</span>,
             },
             { key: "min", header: "Mín.", className: "text-right tabular-nums", render: (p) => formatNumber(p.min_stock) },
           ]}

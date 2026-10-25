@@ -18,7 +18,7 @@ function ConnectionTab() {
   return (
     <Panel title="Conexão com o servidor" icon={Server}>
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-muted ">
           {isDesktop
             ? "No modo local, o Symnager roda o servidor e o banco SQLite dentro deste computador — ideal para um único balcão e funciona sem internet. Use um servidor externo para compartilhar os mesmos dados entre vários computadores ou acessar pela web."
             : "Por padrão a versão web usa a API do mesmo endereço deste site. Informe outro endereço apenas se a API estiver hospedada separadamente."}

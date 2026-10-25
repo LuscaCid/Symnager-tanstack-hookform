@@ -1,6 +1,7 @@
 import { InputHTMLAttributes } from "react"
 import { useFormContext } from "react-hook-form"
 import { cn } from "@/lib/cn"
+import { inputClass } from "@/components/ui/Field"
 
 interface InputProperties extends Omit<InputHTMLAttributes<HTMLInputElement>, "name"> {
   input_name : string
@@ -16,12 +17,12 @@ export default function InputSection ({ input_name, input_label, input_placehold
   const { register, formState : { errors } } = useFormContext()
   const error = errors[input_name]?.message as string | undefined
   return (
-    <fieldset className={cn("flex flex-col gap-1 w-full min-w-0", className)}>
-      <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400" htmlFor={input_name}>{input_label}</label>
+    <fieldset className={cn("flex flex-col gap-1.5 w-full min-w-0", className)}>
+      <label className="text-[13px] font-medium text-muted" htmlFor={input_name}>{input_label}</label>
       <input
         className={cn(
-          "w-full rounded-sm bg-transparent border border-zinc-300 dark:border-zinc-800/80 px-2 py-1 focus:outline-none focus:border-zinc-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600",
-          error && "border-red-500 dark:border-red-500/70",
+          inputClass,
+          error && "border-danger/70 focus:border-danger focus:ring-danger/15",
         )}
         placeholder={input_placeholder}
         id={input_name}
@@ -30,7 +31,7 @@ export default function InputSection ({ input_name, input_label, input_placehold
         {...props}
         {...register(input_name)}
       />
-      {error && <span role="alert" className="text-xs text-red-500">{error}</span>}
+      {error && <span role="alert" className="text-xs text-danger">{error}</span>}
     </fieldset>
 
   )

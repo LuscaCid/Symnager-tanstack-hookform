@@ -23,15 +23,11 @@ export function ConnectionIndicator() {
       onClick={() => navigate("/configuracoes/conexao")}
       title={online ? `Conectado: ${where}` : "Servidor indisponível — clique para configurar"}
       aria-label={online ? "Servidor conectado" : "Servidor indisponível"}
-      className="relative p-1 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200"
+      className="h-8 inline-flex items-center gap-1.5 px-2.5 rounded-lg text-[13px] text-muted hover:bg-hover hover:text-fg transition-colors"
     >
-      {online ? <Server size={20} /> : <ServerOff size={20} className="text-red-500" />}
-      <span
-        className={cn(
-          "absolute top-0.5 right-0.5 w-2 h-2 rounded-full",
-          online ? "bg-green-500" : "bg-red-500 animate-pulse",
-        )}
-      />
+      {online ? <Server size={14} /> : <ServerOff size={14} className="text-danger" />}
+      <span className="hidden md:inline">{online ? (data?.mode === "local" && isDesktop ? "Local" : "Online") : "Offline"}</span>
+      <span className={cn("w-1.5 h-1.5 rounded-full", online ? "bg-success" : "bg-danger animate-pulse")} />
     </button>
   )
 }

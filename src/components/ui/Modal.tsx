@@ -17,38 +17,38 @@ interface ModalProps {
 
 const widths = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" }
 
-/** Diálogo no estilo do ModalContent original (overlay zinc-800/50, conteúdo com borda). */
+/** Diálogo padrão: cartão elevado sobre fundo escurecido. */
 export function Modal({ open, onOpenChange, title, description, children, footer, size = "md" }: ModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-zinc-800/50 backdrop-blur-[1px]" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/35" />
         <Dialog.Content
           className={cn(
             "fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)]",
-            "flex flex-col rounded-md border border-zinc-300 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 shadow-2xl",
-            "text-zinc-950 dark:text-zinc-200 focus:outline-none",
+            "flex flex-col rounded-xl border border-line bg-surface shadow-2xl",
+            "text-fg  focus:outline-none",
             widths[size],
           )}
         >
-          <div className="flex items-start justify-between gap-2 p-3 border-b border-zinc-300 dark:border-zinc-800">
+          <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
             <div>
-              <Dialog.Title className="text-lg font-bold">{title}</Dialog.Title>
+              <Dialog.Title className="text-base font-semibold">{title}</Dialog.Title>
               {description ? (
-                <Dialog.Description className="text-sm text-zinc-600 dark:text-zinc-400">{description}</Dialog.Description>
+                <Dialog.Description className="text-sm text-muted ">{description}</Dialog.Description>
               ) : (
                 <Dialog.Description className="sr-only">{title}</Dialog.Description>
               )}
             </div>
             <Dialog.Close
               aria-label="Fechar"
-              className="bg-transparent cursor-pointer text-red-500 hover:text-red-600 transition duration-200"
+              className="-mr-1 -mt-1 h-8 w-8 inline-flex items-center justify-center rounded-lg text-faint hover:bg-hover hover:text-fg transition-colors"
             >
-              <X size={22} />
+              <X size={18} />
             </Dialog.Close>
           </div>
-          <div className="p-3 overflow-y-auto min-h-0">{children}</div>
-          {footer && <div className="p-3 border-t border-zinc-300 dark:border-zinc-800 flex flex-wrap justify-end gap-2">{footer}</div>}
+          <div className="px-5 pb-5 overflow-y-auto min-h-0">{children}</div>
+          {footer && <div className="px-5 py-3 border-t border-line bg-subtle/50 rounded-b-xl flex flex-wrap justify-end gap-2">{footer}</div>}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -103,7 +103,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      {description && <div className="text-sm text-zinc-700 dark:text-zinc-300">{description}</div>}
+      {description && <div className="text-sm text-muted">{description}</div>}
       {requirePassword && (
         <TextField
           wrapperClassName="mt-3"

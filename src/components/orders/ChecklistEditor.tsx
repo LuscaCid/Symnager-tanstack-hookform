@@ -12,7 +12,7 @@ interface ChecklistEditorProps {
 const STATES: { ok: boolean | null; label: string; icon: typeof Check; active: string }[] = [
   { ok: true, label: "Conforme", icon: Check, active: "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/40" },
   { ok: false, label: "Com problema", icon: X, active: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/40" },
-  { ok: null, label: "Não verificado", icon: Minus, active: "bg-zinc-500/15 border-zinc-500/40" },
+  { ok: null, label: "Não verificado", icon: Minus, active: "bg-faint/15 border-faint/40" },
 ]
 
 /**
@@ -33,7 +33,7 @@ export function ChecklistEditor({ value, onChange, disabled }: ChecklistEditorPr
 
   if (entries.length === 0) {
     return (
-      <p className="text-xs text-zinc-500 flex items-center gap-1">
+      <p className="text-xs text-faint flex items-center gap-1">
         <ClipboardCheck size={14} /> Cadastre os itens em Cadastros auxiliares → Checklist de entrada.
       </p>
     )
@@ -61,7 +61,7 @@ export function ChecklistEditor({ value, onChange, disabled }: ChecklistEditorPr
                 onClick={() => set(entry.item, ok)}
                 className={cn(
                   "p-1 rounded-md border transition duration-200 disabled:cursor-not-allowed",
-                  entry.ok === ok ? active : "border-zinc-300 dark:border-zinc-800 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+                  entry.ok === ok ? active : "border-line  text-faint hover:bg-hover ",
                 )}
               >
                 <Icon size={14} />

@@ -102,7 +102,7 @@ export function PeriodSelector({ value, className }: { value: PeriodApi; classNa
   const { period, choose, setCustom } = value
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      <div role="group" aria-label="Período" className="flex flex-wrap rounded-md border border-zinc-300 dark:border-zinc-800 overflow-hidden">
+      <div role="group" aria-label="Período" className="flex flex-wrap gap-0.5 p-0.5 rounded-lg bg-subtle">
         {PRESETS.map((p) => (
           <button
             key={p.key}
@@ -110,10 +110,10 @@ export function PeriodSelector({ value, className }: { value: PeriodApi; classNa
             aria-pressed={period.preset === p.key}
             onClick={() => choose(p.key)}
             className={cn(
-              "px-2 py-1 text-sm font-semibold transition duration-200 border-r last:border-r-0 border-zinc-300 dark:border-zinc-800",
+              "h-7 px-2.5 rounded-md text-[13px] font-medium transition-colors duration-100",
               period.preset === p.key
-                ? "bg-zinc-950 text-zinc-100 dark:bg-zinc-200 dark:text-zinc-950"
-                : "hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+                ? "bg-surface text-fg shadow-sm"
+                : "text-muted hover:text-fg",
             )}
           >
             {p.label}
@@ -133,7 +133,7 @@ export function PeriodSelector({ value, className }: { value: PeriodApi; classNa
             onChange={(e) => setCustom(e.target.value, period.to)}
             className={cn(inputClass, "w-auto text-sm")}
           />
-          <span className="text-zinc-500 text-sm">até</span>
+          <span className="text-faint text-sm">até</span>
           <label className="sr-only" htmlFor={`period-to`}>
             Data final
           </label>
@@ -147,7 +147,7 @@ export function PeriodSelector({ value, className }: { value: PeriodApi; classNa
           />
         </div>
       ) : (
-        <span className="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <span className="flex items-center gap-1 text-sm text-muted ">
           <CalendarRange size={16} />
           {period.from === period.to ? formatDate(`${period.from}T12:00:00`) : `${formatDate(`${period.from}T12:00:00`)} – ${formatDate(`${period.to}T12:00:00`)}`}
         </span>

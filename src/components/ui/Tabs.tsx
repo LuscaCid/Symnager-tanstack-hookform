@@ -20,7 +20,7 @@ export function Tabs<K extends string>({
   className?: string
 }) {
   return (
-    <div role="tablist" className={cn("shrink-0 flex gap-1 overflow-x-auto border-b border-zinc-300 dark:border-zinc-800 px-2", className)}>
+    <div role="tablist" className={cn("shrink-0 flex gap-4 overflow-x-auto border-b border-line px-4", className)}>
       {tabs
         .filter((t) => !t.hidden)
         .map((t) => {
@@ -33,13 +33,13 @@ export function Tabs<K extends string>({
               aria-selected={active}
               onClick={() => onChange(t.key)}
               className={cn(
-                "flex items-center gap-1 px-3 py-1.5 -mb-px text-sm font-semibold whitespace-nowrap border-b-2 transition duration-200",
+                "flex items-center gap-1.5 py-2.5 -mb-px text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors duration-150",
                 active
-                  ? "border-zinc-950 dark:border-zinc-200"
-                  : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
+                  ? "border-accent text-fg"
+                  : "border-transparent text-muted hover:text-fg",
               )}
             >
-              {Icon && <Icon size={16} />} {t.label}
+              {Icon && <Icon size={15} />} {t.label}
             </button>
           )
         })}

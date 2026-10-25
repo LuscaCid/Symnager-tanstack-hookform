@@ -12,8 +12,8 @@ export default function RegistrationSection(){
   return (
     <section className="w-full h-full min-h-0 flex flex-col">
       <PageHeader icon={User} title="Registro" subtitle={state?.returnTo ? "Após salvar você volta para a OS" : undefined} />
-      <div className="flex-1 min-h-0 overflow-y-auto p-2">
-        <h2 className="text-xl font-bold mb-2 bg-zinc-200 dark:bg-zinc-800/80 rounded-sm p-1">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4"><div className="bg-surface border border-line rounded-xl shadow-sm p-5">
+        <h2 className="text-sm font-semibold text-fg mb-3">
           Preencha os campos
         </h2>
         <ClientForm
@@ -26,7 +26,7 @@ export default function RegistrationSection(){
             }
           }}
         />
-      </div>
+      </div></div>
     </section>
   )
 }

@@ -8,15 +8,61 @@
   padding: 0;
 
 }
+/*
+ * Tokens de cor (R G B). Usados pelo Tailwind via rgb(var(--x) / alpha) — ver tailwind.config.js.
+ * Claro: neutros levemente quentes. Escuro: grafite (não preto puro), bordas de baixo contraste.
+ * Destaque único: verde-petróleo, só em ação principal, item ativo e foco.
+ */
 :root {
+  --c-app: 245 245 243;
+  --c-surface: 255 255 255;
+  --c-subtle: 240 239 236;
+  --c-hover: 234 233 229;
+  --c-line: 229 228 224;
+  --c-line-strong: 212 211 206;
+  --c-fg: 28 27 25;
+  --c-muted: 95 94 90;
+  --c-faint: 141 140 135;
+  --c-accent: 15 118 110;
+  --c-accent-strong: 17 94 89;
+  --c-accent-fg: 255 255 255;
+  --c-accent-soft: 223 240 237;
+  --c-danger: 200 54 54;
+  --c-success: 22 135 84;
+  --c-warning: 190 120 20;
+  --c-shadow: 40 35 25;
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+}
+.dark {
+  --c-app: 21 21 23;
+  --c-surface: 28 28 31;
+  --c-subtle: 35 35 39;
+  --c-hover: 42 42 47;
+  --c-line: 44 44 49;
+  --c-line-strong: 60 60 66;
+  --c-fg: 236 236 238;
+  --c-muted: 165 165 172;
+  --c-faint: 118 118 125;
+  --c-accent: 54 181 165;
+  --c-accent-strong: 94 205 190;
+  --c-accent-fg: 12 30 28;
+  --c-accent-soft: 30 52 50;
+  --c-danger: 239 104 104;
+  --c-success: 74 196 132;
+  --c-warning: 232 168 64;
+  --c-shadow: 0 0 0;
+  color-scheme: dark;
 }
 html, body, #root {
   height: 100%;
 }
 body {
   overflow: hidden;
+  background: rgb(var(--c-app));
+  color: rgb(var(--c-fg));
 }
   body, button, input,textarea, select {
   -webkit-font-smoothing: antialiased;
@@ -26,25 +72,41 @@ body {
 input[type="search"]::-webkit-search-cancel-button {
   cursor: pointer;
 }
+::selection {
+  background: rgb(var(--c-accent) / 0.22);
+}
 
-/* barra de rolagem: trilha clara no tema claro, escura no tema escuro */
-::-webkit-scrollbar-track { /** é todo o preenchimento */
-  background: rgba(212, 212, 216, 0.6);
-  border-radius: 9999px;
-}
-.dark ::-webkit-scrollbar-track {
-  background: rgba(43, 43, 43, 0.678); /* 43, 43, 43 */
-}
+/* barra de rolagem fina, acompanha o tema */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
-::-webkit-scrollbar-thumb {/** é apenas onde segura para rolar */
-  background-color: rgb(156, 156, 156) ;
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--c-line-strong));
   border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(120, 120, 120);
+  background-color: rgb(var(--c-faint));
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* barra de título própria do app desktop (Electron, janela sem moldura) */
+.app-drag {
+  -webkit-app-region: drag;
+}
+.app-no-drag,
+.app-drag button,
+.app-drag input,
+.app-drag a,
+.app-drag [role="button"] {
+  -webkit-app-region: no-drag;
 }
 
 /* ---------- impressão de OS ---------- */

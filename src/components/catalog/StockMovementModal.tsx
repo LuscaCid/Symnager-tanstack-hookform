@@ -103,14 +103,14 @@ export function StockMovementModal({ product, open, onOpenChange, onMoved }: Pro
           {...register("quantity")}
         />
         <TextField label="Motivo" placeholder="NF 1234, contagem mensal..." error={errors.reason?.message} {...register("reason")} />
-        <p className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="flex items-center gap-2 text-sm text-muted ">
           {type === "IN" ? <ArrowDownToLine size={16} /> : type === "OUT" ? <ArrowUpFromLine size={16} /> : <Scale size={16} />}
           Saldo após o movimento:{" "}
-          <strong className={preview < 0 ? "text-red-500" : "text-zinc-900 dark:text-zinc-200"}>
+          <strong className={preview < 0 ? "text-red-500" : "text-fg "}>
             {formatNumber(preview)} {product.unit}
           </strong>
         </p>
-        <p className="text-xs text-zinc-500">Peças usadas em OS dão baixa automaticamente ao serem incluídas na ordem.</p>
+        <p className="text-xs text-faint">Peças usadas em OS dão baixa automaticamente ao serem incluídas na ordem.</p>
         <button type="submit" hidden />
       </form>
     </Modal>

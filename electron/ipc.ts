@@ -146,4 +146,26 @@ export function registerIpc(getWindow: () => BrowserWindow | null) {
   })
 
   handle("backup:now", () => backupNow())
+
+  // controles da janela (barra de título própria)
+  handle("window:minimize", () => getWindow()?.minimize())
+  handle("window:toggleMaximize", () => {
+    const win = getWindow()
+    if (!win) return false
+    if (win.isFullScreen()) win.setFullScreen(false)
+    else if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
+    return win.isMaximized()
+  })
+  handle("window:toggleFullScreen", () => {
+    const win = getWindow()
+    if (!win) return false
+    win.setFullScreen(!win.isFullScreen())
+    return win.isFullScreen()
+  })
+  handle("window:close", () => getWindow()?.close())
+  handle("window:state", () => {
+    const win = getWindow()
+    return { maximized: !!win?.isMaximized(), fullscreen: !!win?.isFullScreen(), focused: !!win?.isFocused() }
+  })
 }

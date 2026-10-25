@@ -22,7 +22,7 @@ const ROLE_HINT: Record<Role, string> = {
 }
 
 const ROLE_TONE: Record<Role, string> = {
-  ADMIN: "bg-zinc-950 text-zinc-100 border-zinc-950 dark:bg-zinc-200 dark:text-zinc-950 dark:border-zinc-200",
+  ADMIN: "bg-accent text-accent-fg border-accent   ",
   TECNICO: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30",
   ATENDENTE: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
 }
@@ -138,12 +138,12 @@ function UserForm({ selected, close, select, me }: CatalogFormContext<User> & { 
           {...register("confirm")}
         />
         {isSelf ? (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 self-center">Esta é a sua conta.</p>
+          <p className="text-sm text-muted self-center">Esta é a sua conta.</p>
         ) : (
           <Checkbox label="Ativo (pode entrar no sistema)" {...register("active")} />
         )}
         {selected && (
-          <p className="text-xs text-zinc-500 self-center">
+          <p className="text-xs text-faint self-center">
             Último acesso: {selected.last_login_at ? formatRelative(selected.last_login_at) : "nunca"}
           </p>
         )}
@@ -194,7 +194,7 @@ export default function Users() {
                 {u.user_id === me?.user_id && <Badge>você</Badge>}
                 <ActiveBadge active={u.active} />
               </span>
-              <span className="text-xs text-zinc-500">@{u.username}</span>
+              <span className="text-xs text-faint">@{u.username}</span>
             </span>
           ),
         },

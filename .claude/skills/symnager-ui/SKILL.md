@@ -1,91 +1,69 @@
 ---
 name: symnager-ui
-description: Visual language and component conventions of the Symnager frontend (zinc palette, bordered panels, dark mode by class, lucide icons, pt-BR copy). Load before creating or editing any page, component or CSS in Symnager-tanstack-hookform so new screens match the existing look.
+description: Visual language and component conventions of the Symnager frontend (semantic color tokens, soft layered surfaces, single teal accent, Inter, rounded 8–16px, pt-BR copy). Load before creating or editing any page, component or CSS in Symnager-tanstack-hookform so new screens match the current look.
 ---
 
-# Symnager — guia de estilo da interface
+# Symnager — guia de estilo da interface (v2)
 
-Extraído das telas originais (Home/History/NewJobForm, User/Registration, ClientDetails, Sidebar).
-Toda tela nova deve parecer que sempre esteve no app.
+Direção: ferramenta de trabalho calma e legível. Superfícies em camadas em vez de bordas fortes,
+neutros levemente quentes, **um único destaque** (verde-petróleo) e nada de efeitos chamativos.
 
-## Princípios
+## O que NÃO fazer (evita cara de "produto de IA" e o visual pesado antigo)
+- Sem gradientes, brilho/glow, vidro fosco (backdrop-blur decorativo), ícone de faísca ✨, roxo/índigo como marca.
+- Sem `font-bold` em massa — títulos usam `font-semibold`, rótulos `font-medium`.
+- Sem cores fixas `zinc-*`/`gray-*` nem pares `dark:` para neutros: use **tokens** (abaixo). Os tokens já mudam com o tema.
+- Sem barras de título cinza-escuras dentro de cartões; título de seção é texto `text-sm font-semibold`.
+- Sem `absolute inset-*` para layout de página.
 
-1. **Monocromático zinc** — sem cores de marca. Cor só para significado (status, sucesso, perigo).
-2. **Painéis com borda fina**, não sombras pesadas nem fundos coloridos. Separação = `border` + `rounded-md`.
-3. **Fundo transparente + hover sutil** em tudo que é clicável.
-4. **Cabeçalho de seção** = ícone dentro de uma caixinha com borda + título em negrito.
-5. **Dark mode por classe** (`html.dark`), toda classe de cor tem par `dark:`.
-6. **Textos em português (pt-BR)**, curtos. Datas com `date-fns` + `ptBR`.
+## Tokens (Tailwind → variáveis CSS em `src/globals.css`)
 
-## Tokens (Tailwind)
+| Classe | Uso |
+|---|---|
+| `bg-app` | fundo da janela/páginas |
+| `bg-surface` | cartões, painéis, sidebar, header, modais, inputs |
+| `bg-subtle` | campos de busca, trilhas de controles segmentados, skeleton |
+| `bg-hover` / `hover:bg-hover` | hover de itens clicáveis |
+| `border-line` / `border-line-strong` | bordas discretas / hover de borda |
+| `text-fg` / `text-muted` / `text-faint` | texto principal / secundário / apoio e placeholders |
+| `bg-accent text-accent-fg`, `hover:bg-accent-strong` | ação principal (1 por área), seleção forte |
+| `bg-accent-soft text-accent` | item ativo do menu, ícone do cabeçalho, avatar, tags |
+| `text-danger` `text-success` `text-warning` (+ `/10` em fundos) | estados |
 
-| Papel | Claro | Escuro |
-|---|---|---|
-| Fundo do app | `bg-zinc-100` | `dark:bg-zinc-950` |
-| Texto principal | `text-zinc-950` / `text-zinc-900` | `dark:text-zinc-200` / `dark:text-zinc-300` |
-| Texto secundário | `text-zinc-600` | `dark:text-zinc-400` |
-| Texto apagado | `text-zinc-400`/`500` | `dark:text-zinc-500`/`600` |
-| Borda | `border-zinc-300` | `dark:border-zinc-800` (ou `/80`) |
-| Superfície destacada (barra de título de form, legend) | `bg-zinc-200` | `dark:bg-zinc-800/80` |
-| Hover de item | `hover:bg-zinc-200` | `dark:hover:bg-zinc-800/80` |
-| Input "preenchido" (busca) | `bg-zinc-300 border-zinc-400` | `dark:bg-zinc-800 dark:border-zinc-700/80` |
-| Chip/tag invertido | `bg-zinc-950 text-zinc-100` | `dark:bg-zinc-200 dark:text-zinc-950` |
-| Sucesso | `text-green-500`, `hover:bg-green-300` | `dark:hover:bg-green-900` |
-| Perigo | `text-red-500`, `hover:bg-red-300` | `dark:hover:bg-red-800` |
+Alfa funciona: `bg-accent/15`, `border-danger/40`, `bg-subtle/60`.
 
-Transições: sempre `transition duration-200`. Raio: `rounded-md` (containers, botões), `rounded-sm` (inputs, barras), `rounded-full` só em inputs de busca de modal e badges.
+Raios: `rounded-md` 10px (itens pequenos), `rounded-lg` 12px (botões, inputs), `rounded-xl` 16px (cartões, modais).
+Sombras (já suaves no config): `shadow-sm` em cartões/inputs, `shadow` no hover de cartão clicável, `shadow-lg/2xl` só em flutuantes.
+Fonte: Inter Variable (embutida, funciona offline). Tamanhos: corpo `text-sm`, apoio `text-[13px]`/`text-xs`, título de página `text-lg font-semibold`.
 
-Cores de status de OS (únicas cores "vivas" permitidas, sempre como badge discreto `bg-<cor>-500/15 text-<cor>-700 dark:text-<cor>-300 border border-<cor>-500/30`):
-ABERTA=zinc, EM_ANALISE=sky, AGUARDANDO_APROVACAO=amber, APROVADA=indigo, AGUARDANDO_PECA=orange, EM_REPARO=violet, PRONTA=emerald, ENTREGUE=green, CANCELADA=red.
-Prioridade: BAIXA=zinc, NORMAL=sky, ALTA=amber, URGENTE=red.
+## Padrões
 
-## Padrões de layout
+- **Página**: `<Page>` → `<PageHeader icon title subtitle actions>` (ícone em quadrado `bg-accent-soft text-accent`) → `<PageBody>` (`px-4 pb-4`).
+- **Cartão**: `bg-surface border border-line rounded-xl shadow-sm p-4/p-5`. Use `<Panel title>` para cartões com título.
+- **Cartão de lista clicável** (OS, cliente): `p-3.5 rounded-xl bg-surface border border-line shadow-sm hover:border-line-strong hover:shadow`.
+  Hierarquia: linha pequena `text-xs text-faint` (nº/data) → título `text-sm font-semibold` → apoio `text-[13px] text-muted`.
+- **Controle segmentado** (tema, período, lista/quadro): trilha `p-0.5 rounded-lg bg-subtle`; opção ativa `bg-surface text-fg shadow-sm`, inativa `text-muted hover:text-fg`.
+- **Tabela** (`DataTable`): cartão branco, cabeçalho `text-xs text-muted` sem fundo, linhas separadas por `border-line`.
+- **Badges**: `StatusBadge` = ponto colorido + texto sobre fundo `cor/12`, sem borda.
+- **Formulários**: `TextField/SelectField/TextAreaField` (label `text-[13px] text-muted` acima, input `h-9 rounded-lg`, foco `border-accent` + anel `ring-accent/15`).
+- **SplitPane**: divisória de 1px `bg-line`; no hover/arraste ganha a cor do destaque e uma alça.
+- Status de OS mantém a família de cores (sky, amber, indigo, orange, violet, emerald, green, red) — únicas cores além do destaque.
 
-- O `Layout` é: `Header` (barra fina com botão de menu) + `Sidebar` recolhível + `<Outlet/>`.
-- Páginas ocupam `w-full h-full` e **não** rolam o body; quem rola é a área interna (`overflow-y-auto`).
-  Evite `absolute inset-*` para layout de página — foi a origem de sobreposições e cortes nas telas antigas.
-  Use flex column: cabeçalho fixo (`shrink-0`) + corpo `flex-1 min-h-0 overflow-y-auto`.
-- Telas com duas colunas usam **`<SplitPane>`** (`src/components/ui/SplitPane.tsx`) — divisória arrastável
-  com o mouse, tamanho persistido por `storageKey`; em telas estreitas (<768px) vira coluna única empilhada.
-- Seção padrão:
-  ```tsx
-  <PageHeader icon={History} title="Histórico" actions={...} />
-  ```
-  que renderiza
-  ```tsx
-  <h1 className="p-2 flex items-center gap-2 text-2xl font-bold border-b border-zinc-300 dark:border-zinc-800 w-full">
-    <div className="rounded-md border border-zinc-300 dark:border-zinc-800/80 p-0.5"><Icon size={24}/></div>
-    Título
-  </h1>
-  ```
-- Formulário padrão: container `border border-zinc-300 dark:border-zinc-800/80 rounded-md m-2 flex flex-col gap-2`
-  com barra de título `bg-zinc-200 dark:bg-zinc-800/80 rounded-sm p-1 text-xl font-bold flex justify-between items-center` e ícone à direita.
-- Card de lista (HistoryBox/UserBox): `flex flex-col gap-2 p-2 border border-zinc-300 dark:border-zinc-800 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200 shadow-md`
-  — header com nome em `font-bold text-lg` à esquerda e data relativa `text-sm font-medium text-zinc-600` à direita.
-- Skeleton de carregamento: blocos `bg-zinc-200 dark:bg-zinc-800/80 animate-pulse` com barras internas `bg-zinc-300 dark:bg-zinc-500`.
+## Desktop: barra de título própria
+A janela do Electron é sem moldura (Windows/Linux). O `Header` é a barra de título: classe `app-drag` (arrasta a janela),
+botões/inputs são automaticamente `no-drag`, duplo clique na área livre maximiza, e `WindowControls`
+(minimizar / maximizar-restaurar / fechar, F11 = tela cheia) fica à direita. Telas fora do layout usam `<SlimTitleBar/>`.
+Elemento interativo novo dentro de uma área `app-drag` que não seja button/input/a precisa da classe `app-no-drag`.
 
-## Componentes base (use-os, não recrie)
+## Componentes base (`src/components/ui/`)
+`Button` (default | primary | success | danger | ghost; sm | md), `IconButton`, `TextField`, `SelectField`, `TextAreaField`,
+`SearchInput`, `Checkbox`, `PageHeader`, `Panel`, `Page`, `PageBody`, `Badge`, `StatusBadge`, `PriorityBadge`, `TagChip`,
+`Modal`, `ConfirmDialog`, `DataTable`, `Pagination`, `Tabs`, `EmptyState`, `ErrorState`, `Spinner`, `ListSkeleton`,
+`StatCard`, `SplitPane`. Constante `inputClass` para inputs customizados.
 
-Todos em `src/components/ui/`:
-`Button` (variants: `default` borda+transparente, `primary` invertido zinc-950/zinc-200, `success`, `danger`, `ghost`; sizes `sm|md`),
-`TextField`/`SelectField`/`TextAreaField` (label visível pequena + input `bg-transparent border rounded-sm px-2 py-1`, integra com `react-hook-form` via `register`, mostra `error`),
-`SearchInput` (estilo do input "Pesquisar" original), `PageHeader`, `Panel`, `Badge`/`StatusBadge`/`PriorityBadge`,
-`Modal` (Radix Dialog com overlay `bg-zinc-800/50` e conteúdo `bg-zinc-100 dark:bg-zinc-950` com borda — igual ao ModalContent original),
-`ConfirmDialog`, `DataTable` (tabela simples com cabeçalho `bg-zinc-200 dark:bg-zinc-800/80`), `Pagination`, `EmptyState`, `Spinner`, `ListSkeleton`, `SplitPane`, `Tabs`, `StatCard`.
-
-## Interação e feedback
-
-- **Nunca use `alert()`/`confirm()`** — use `toast` do `sonner` (já montado no `App`) e `ConfirmDialog`.
-- Botão de submit mostra `<Loader className="animate-spin"/>` enquanto `isPending` e fica `disabled:opacity-50 disabled:cursor-not-allowed`.
-- Dados do servidor sempre via TanStack Query (`useQuery`/`useMutation`) usando os hooks/funções de `src/lib/` e `src/services/`; nunca `fetch('http://localhost:3000')` direto.
-- Atalhos: `Ctrl+K` abre a busca global; `Esc` fecha modais.
-- Acessibilidade: todo input tem `<label htmlFor>` (pode ser `sr-only`), botões só com ícone têm `aria-label`/`title`.
-
-## Ícones
-
-`lucide-react`, `size={20}` em linha/botões, `size={24}` em cabeçalhos, `strokeWidth` padrão.
+## Interação
+- Feedback com `toast` (sonner) e `ConfirmDialog`; nunca `alert()/confirm()`.
+- Transições curtas: `transition-colors duration-150`.
+- Acessibilidade: label em todo campo, `aria-label` em botões só com ícone, foco visível (`ring-accent/40`).
 
 ## Impressão
-
-Conteúdo imprimível fica dentro de `.print-area`; `@media print` em `globals.css` esconde o resto.
-Layout A4 e térmico 80 mm (`.print-thermal`). Na impressão é sempre preto no branco, independente do tema.
+`.print-area` é sempre preto no branco (independe do tema); `PrintDocument.tsx` não usa tokens de propósito.

@@ -104,7 +104,7 @@ export function SplitPane({ left, right, storageKey, defaultSize = 50, minLeft =
   if (narrow) {
     return (
       <div className={cn("flex flex-col w-full h-full min-h-0 overflow-y-auto", className)}>
-        <div className="min-h-[60vh] flex flex-col border-b border-zinc-300 dark:border-zinc-800">{left}</div>
+        <div className="min-h-[60vh] flex flex-col border-b border-line">{left}</div>
         <div className="flex flex-col">{right}</div>
       </div>
     )
@@ -133,16 +133,22 @@ export function SplitPane({ left, right, storageKey, defaultSize = 50, minLeft =
         onPointerCancel={handlePointerUp}
         onDoubleClick={() => setSize(clamp(defaultSize))}
         onKeyDown={handleKeyDown}
-        className="group relative w-1.5 shrink-0 cursor-col-resize touch-none flex items-stretch justify-center focus:outline-none"
+        className="group relative w-2 -mx-[3px] z-10 shrink-0 cursor-col-resize touch-none flex items-stretch justify-center focus:outline-none"
       >
         <span
           className={cn(
-            "w-px h-full bg-zinc-300 dark:bg-zinc-800 transition duration-200",
-            "group-hover:w-1 group-hover:bg-zinc-400 dark:group-hover:bg-zinc-600 group-focus-visible:w-1 group-focus-visible:bg-zinc-500",
-            dragging && "w-1 bg-zinc-500 dark:bg-zinc-500",
+            "w-px h-full bg-line transition-colors duration-150",
+            "group-hover:bg-accent/50 group-focus-visible:bg-accent",
+            dragging && "bg-accent",
           )}
         />
-        <span className="absolute top-1/2 -translate-y-1/2 h-8 w-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600 opacity-0 group-hover:opacity-100 transition duration-200" />
+        <span
+          className={cn(
+            "absolute top-1/2 -translate-y-1/2 h-10 w-[5px] rounded-full bg-line-strong opacity-0 transition-opacity duration-150",
+            "group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:bg-accent/70",
+            dragging && "opacity-100 bg-accent",
+          )}
+        />
       </div>
       <div className="h-full min-w-0 flex-1 flex flex-col overflow-hidden">{right}</div>
     </div>

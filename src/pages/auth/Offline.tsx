@@ -18,7 +18,7 @@ export default function OfflineScreen() {
           <p>
             {error ?? "Não foi possível falar com o servidor."}
             <br />
-            <span className="text-zinc-600 dark:text-zinc-400">
+            <span className="text-muted ">
               {isDesktop
                 ? "Se estiver usando um servidor externo, verifique o endereço e a rede. No modo local, reinicie o servidor embutido."
                 : "Verifique se a API está em execução e se o endereço está correto."}

@@ -132,7 +132,7 @@ export default function Suppliers() {
               <span className="flex items-center gap-2 font-semibold">
                 {s.name} <ActiveBadge active={s.active} />
               </span>
-              {s.contact && <span className="text-xs text-zinc-500">{s.contact}</span>}
+              {s.contact && <span className="text-xs text-faint">{s.contact}</span>}
             </span>
           ),
         },

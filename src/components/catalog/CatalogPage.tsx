@@ -143,7 +143,7 @@ export function CatalogPage<T>({
       render: (row) => (
         <span
           aria-hidden
-          className={cn("block w-1 h-6 rounded-full", rowKey(row) === selectedId ? "bg-zinc-950 dark:bg-zinc-200" : "bg-transparent")}
+          className={cn("block w-1 h-6 rounded-full", rowKey(row) === selectedId ? "bg-accent " : "bg-transparent")}
         />
       ),
     },

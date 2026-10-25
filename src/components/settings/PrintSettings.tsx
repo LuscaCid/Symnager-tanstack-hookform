@@ -30,7 +30,7 @@ function CompanyPrintDefaults() {
   return (
     <Panel title="Padrões da empresa" icon={Printer}>
       <div className="flex flex-col gap-2">
-        {!isAdmin && <p className="text-sm text-zinc-600 dark:text-zinc-400">Somente administradores alteram estes padrões.</p>}
+        {!isAdmin && <p className="text-sm text-muted ">Somente administradores alteram estes padrões.</p>}
         <fieldset disabled={!isAdmin} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <SelectField label="Layout padrão" value={form.layout} onChange={(e) => update({ layout: e.target.value as "A4" | "THERMAL" })}>
             <option value="A4">{LAYOUT_LABEL.A4}</option>
@@ -97,7 +97,7 @@ function LocalPrintPreferences() {
   return (
     <Panel title="Nesta máquina" icon={Monitor}>
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-muted ">
           Preferências guardadas só neste computador (cada balcão pode ter sua impressora).
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -126,7 +126,7 @@ function LocalPrintPreferences() {
               ))}
             </SelectField>
           ) : (
-            <p className="text-xs text-zinc-500 self-end">
+            <p className="text-xs text-faint self-end">
               No navegador a impressora é escolhida na janela de impressão do sistema.
             </p>
           )}

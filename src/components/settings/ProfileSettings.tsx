@@ -76,7 +76,7 @@ export function ProfileSettings() {
           <TextField label="Usuário" autoComplete="username" error={pe.username?.message} {...profile.register("username")} />
           <TextField label="E-mail" type="email" autoComplete="email" error={pe.email?.message} {...profile.register("email")} />
           <TextField label="Telefone" inputMode="tel" autoComplete="tel" error={pe.phone?.message} {...profile.register("phone")} />
-          <p className="sm:col-span-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="sm:col-span-2 text-sm text-muted ">
             Papel: <strong>{user ? ROLE_LABEL[user.role] : "—"}</strong> (alterado apenas por um administrador)
           </p>
           <div className="sm:col-span-2 flex justify-end">

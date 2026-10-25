@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/Auth-context'
 import { Spinner } from '@/components/ui'
 import type { Role } from '@/@types/api'
 import OfflineScreen from '@/pages/auth/Offline'
+import { SlimTitleBar } from '@/components/Layout/WindowControls'
 
 const Dashboard = lazy(() => import('../pages/Dashboard'))
 const Home = lazy(() => import('../pages/HomePage'))
@@ -29,8 +30,11 @@ const NotFound = lazy(() => import('../pages/NotFound'))
 
 function FullScreenLoading() {
   return (
-    <div className="h-full flex items-center justify-center">
-      <Spinner label="Iniciando o Symnager..." />
+    <div className="h-full flex flex-col">
+      <SlimTitleBar title="" />
+      <div className="flex-1 flex items-center justify-center">
+        <Spinner label="Iniciando o Symnager..." />
+      </div>
     </div>
   )
 }

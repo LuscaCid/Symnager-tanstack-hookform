@@ -3,11 +3,10 @@ import { useContextSelector } from 'use-context-selector'
 import { ThemeContext } from '@/contexts/Theme-context'
 import { cn } from '@/lib/cn'
 
+/** Alternância de tema: controle segmentado (expandido) ou botão único (recolhido). */
 export function ChangeTheme({ compact = false }: { compact?: boolean }) {
     const theme = useContextSelector(ThemeContext, (c) => c.theme)
     const toggleTheme = useContextSelector(ThemeContext, (c) => c.toggleTheme)
-
-    const buttonClass = 'hover:bg-zinc-200 transition duration-200 rounded-md flex px-1 py-0.5 border border-zinc-300 dark:border-zinc-800/80 items-center dark:hover:bg-zinc-800/80 justify-between gap-1'
 
     if (compact) {
         const next = theme === 'dark' ? 'light' : 'dark'
@@ -16,27 +15,31 @@ export function ChangeTheme({ compact = false }: { compact?: boolean }) {
                 onClick={() => toggleTheme(next)}
                 aria-label={next === 'dark' ? 'Tema escuro' : 'Tema claro'}
                 title={next === 'dark' ? 'Tema escuro' : 'Tema claro'}
-                className={cn(buttonClass, 'justify-center p-1')}
+                className='mx-auto h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted hover:bg-hover hover:text-fg transition-colors'
             >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
         )
     }
 
+    const option = (value: 'light' | 'dark', label: string, Icon: typeof Sun) => (
+        <button
+            key={value}
+            onClick={() => toggleTheme(value)}
+            aria-pressed={theme === value}
+            className={cn(
+                'flex-1 h-7 inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium transition-colors',
+                theme === value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
+            )}
+        >
+            <Icon size={13} /> {label}
+        </button>
+    )
+
     return (
-    <div className='flex flex-col gap-1'>
-        <button
-            onClick={() => toggleTheme('light')}
-            aria-pressed={theme === 'light'}
-            className={cn(buttonClass, theme === 'light' && 'bg-zinc-200 dark:bg-zinc-800/80')}>
-            claro <Sun size={18} />
-        </button>
-        <button
-            onClick={() => toggleTheme('dark')}
-            aria-pressed={theme === 'dark'}
-            className={cn(buttonClass, theme === 'dark' && 'bg-zinc-200 dark:bg-zinc-800/80')}>
-            escuro <Moon size={18} />
-        </button>
-    </div>
+        <div role='group' aria-label='Tema' className='flex gap-0.5 p-0.5 rounded-lg bg-subtle'>
+            {option('light', 'Claro', Sun)}
+            {option('dark', 'Escuro', Moon)}
+        </div>
     )
 }

@@ -83,7 +83,7 @@ function StatsCharts({ stats, onCategory, onReason }: { stats: FailureStats; onC
               key: "rate",
               header: "Taxa",
               className: "text-right tabular-nums",
-              render: (u) => <span className={cn(u.rate > stats.rate * 1.5 && u.delivered >= 5 && "text-red-500 font-bold")}>{u.delivered ? formatPercent(u.rate) : "—"}</span>,
+              render: (u) => <span className={cn(u.rate > stats.rate * 1.5 && u.delivered >= 5 && "text-red-500 font-semibold")}>{u.delivered ? formatPercent(u.rate) : "—"}</span>,
             },
           ]}
         />
@@ -137,7 +137,7 @@ export default function Failures() {
           <>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-[84px] rounded-md bg-zinc-200 dark:bg-zinc-800/80 animate-pulse" />
+                <div key={i} className="h-[84px] rounded-xl bg-subtle animate-pulse" />
               ))}
             </div>
             <ChartSkeleton height={260} />

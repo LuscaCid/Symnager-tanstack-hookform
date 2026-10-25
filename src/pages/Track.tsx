@@ -76,7 +76,7 @@ export default function Track() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <strong className="block text-lg">{formatOrderNumber(data.number)}</strong>
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">{data.device}</span>
+              <span className="text-sm text-muted ">{data.device}</span>
             </div>
             <StatusBadge status={data.status} />
           </div>
@@ -87,32 +87,32 @@ export default function Track() {
               {STEPS.map((step, i) => {
                 const done = i <= currentStep
                 return (
-                  <li key={step.label} className={cn("flex items-center gap-2 text-sm", !done && "text-zinc-400 dark:text-zinc-600")}>
+                  <li key={step.label} className={cn("flex items-center gap-2 text-sm", !done && "text-faint ")}>
                     {done ? <CheckCircle2 size={18} className="text-green-500" /> : <Circle size={18} />}
-                    <span className={cn(i === currentStep && "font-bold")}>{step.label}</span>
+                    <span className={cn(i === currentStep && "font-semibold")}>{step.label}</span>
                   </li>
                 )
               })}
             </ol>
           )}
-          <dl className="text-sm grid grid-cols-2 gap-1 border-t border-zinc-300 dark:border-zinc-800 pt-2">
-            <dt className="text-zinc-500">Entrada</dt>
+          <dl className="text-sm grid grid-cols-2 gap-1 border-t border-line pt-2">
+            <dt className="text-faint">Entrada</dt>
             <dd>{formatDateTime(data.arrived_at)}</dd>
             {data.finished_at && (
               <>
-                <dt className="text-zinc-500">Concluído</dt>
+                <dt className="text-faint">Concluído</dt>
                 <dd>{formatDateTime(data.finished_at)}</dd>
               </>
             )}
             {data.delivered_at && (
               <>
-                <dt className="text-zinc-500">Entregue</dt>
+                <dt className="text-faint">Entregue</dt>
                 <dd>{formatDateTime(data.delivered_at)}</dd>
               </>
             )}
           </dl>
           {data.company?.name && (
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-faint">
               {data.company.name}
               {data.company.phone && ` · ${formatPhone(data.company.phone)}`}
             </p>

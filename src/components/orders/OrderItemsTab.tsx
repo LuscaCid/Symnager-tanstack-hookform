@@ -76,10 +76,10 @@ function ItemRow({ order, item, readOnly }: { order: Order; item: OrderItem; rea
   })
   const Icon = item.kind === "SERVICE" ? Wrench : Boxes
   return (
-    <tr className="border-t border-zinc-300 dark:border-zinc-800">
+    <tr className="border-t border-line ">
       <td className="px-2 py-1">
         <span className="flex items-center gap-1 min-w-0">
-          <Icon size={14} className="shrink-0 text-zinc-500" aria-label={item.kind === "SERVICE" ? "Serviço" : "Produto"} />
+          <Icon size={14} className="shrink-0 text-faint" aria-label={item.kind === "SERVICE" ? "Serviço" : "Produto"} />
           <span className="truncate">{item.description}</span>
         </span>
       </td>
@@ -143,7 +143,7 @@ function AddItemForm({ order, onDone }: { order: Order; onDone: () => void }) {
   const lowStock = picked?.kind === "PRODUCT" && picked.stock !== undefined && picked.stock < parseDecimal(quantity)
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-2 border border-zinc-300 dark:border-zinc-800 rounded-md p-2">
+    <form onSubmit={submit} className="flex flex-col gap-2 border border-line rounded-md p-2">
       <div className="flex items-center gap-1" role="group" aria-label="Tipo de item">
         {(["SERVICE", "PRODUCT"] as Kind[]).map((k) => (
           <button
@@ -157,8 +157,8 @@ function AddItemForm({ order, onDone }: { order: Order; onDone: () => void }) {
             className={cn(
               "flex items-center gap-1 px-2 py-1 text-sm rounded-md border transition duration-200",
               kind === k
-                ? "border-zinc-950 dark:border-zinc-200 bg-zinc-200 dark:bg-zinc-800 font-semibold"
-                : "border-zinc-300 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+                ? "border-accent bg-accent-soft text-accent font-medium"
+                : "border-line  hover:bg-hover ",
             )}
           >
             {k === "SERVICE" ? <Wrench size={14} /> : <Boxes size={14} />} {k === "SERVICE" ? "Serviço" : "Produto / peça"}
@@ -184,7 +184,7 @@ function AddItemForm({ order, onDone }: { order: Order; onDone: () => void }) {
         />
       </div>
       {lowStock && <p className="text-xs text-amber-600 dark:text-amber-400">Estoque atual ({picked?.stock}) menor que a quantidade.</p>}
-      {picked?.kind === "PRODUCT" && <p className="text-xs text-zinc-500">A peça é baixada do estoque ao adicionar e devolvida se o item for removido.</p>}
+      {picked?.kind === "PRODUCT" && <p className="text-xs text-faint">A peça é baixada do estoque ao adicionar e devolvida se o item for removido.</p>}
       <Button type="submit" size="sm" variant="primary" icon={Plus} loading={add.isPending} disabled={!description.trim()}>
         Adicionar item
       </Button>
@@ -194,8 +194,8 @@ function AddItemForm({ order, onDone }: { order: Order; onDone: () => void }) {
 
 function TotalsRow({ label, value, strong, tone }: { label: string; value: number; strong?: boolean; tone?: "danger" | "success" }) {
   return (
-    <div className={cn("flex justify-between gap-2", strong && "font-bold text-base")}>
-      <span className="text-zinc-600 dark:text-zinc-400">{label}</span>
+    <div className={cn("flex justify-between gap-2", strong && "font-semibold text-base")}>
+      <span className="text-muted ">{label}</span>
       <span className={cn("tabular-nums", tone === "danger" && "text-red-500", tone === "success" && "text-green-600 dark:text-green-400")}>
         {formatMoney(value)}
       </span>
@@ -206,11 +206,11 @@ function TotalsRow({ label, value, strong, tone }: { label: string; value: numbe
 export function OrderTotals({ order }: { order: Order }) {
   const balance = balanceOf(order)
   return (
-    <div className="flex flex-col gap-1 text-sm border border-zinc-300 dark:border-zinc-800 rounded-md p-2">
+    <div className="flex flex-col gap-1 text-sm border border-line rounded-md p-2">
       <TotalsRow label="Serviços" value={order.total_services} />
       <TotalsRow label="Produtos" value={order.total_products} />
       {order.discount > 0 && <TotalsRow label="Desconto" value={-order.discount} />}
-      <div className="border-t border-zinc-300 dark:border-zinc-800 my-1" />
+      <div className="border-t border-line my-1" />
       <TotalsRow label="Total" value={order.total} strong />
       <TotalsRow label="Pago" value={order.paid} tone={order.paid > 0 ? "success" : undefined} />
       <TotalsRow label="Saldo" value={balance} strong tone={balance > 0 ? "danger" : "success"} />
@@ -235,7 +235,7 @@ export function OrderItemsTab({ order, readOnly }: { order: Order; readOnly?: bo
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs text-zinc-600 dark:text-zinc-400">
+              <thead className="text-left text-xs text-muted ">
                 <tr>
                   <th className="px-2 py-1 font-semibold">Descrição</th>
                   <th className="px-2 py-1 font-semibold text-right">Qtd.</th>

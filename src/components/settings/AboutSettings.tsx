@@ -17,7 +17,7 @@ const SHORTCUTS: [string, string][] = [
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <>
-      <dt className="text-zinc-500">{label}</dt>
+      <dt className="text-faint">{label}</dt>
       <dd className="break-all">{children}</dd>
     </>
   )
@@ -70,14 +70,14 @@ export function AboutSettings() {
           {SHORTCUTS.map(([keys, label]) => (
             <li key={keys} className="flex items-center justify-between gap-2">
               <span>{label}</span>
-              <kbd className="text-xs border border-zinc-300 dark:border-zinc-700 rounded px-1.5 py-0.5 whitespace-nowrap">{keys}</kbd>
+              <kbd className="text-xs border border-line rounded px-1.5 py-0.5 whitespace-nowrap">{keys}</kbd>
             </li>
           ))}
         </ul>
       </Panel>
 
       <Panel title="Segurança e privacidade" icon={ShieldCheck}>
-        <ul className="list-disc pl-5 text-sm flex flex-col gap-1 text-zinc-700 dark:text-zinc-300">
+        <ul className="list-disc pl-5 text-sm flex flex-col gap-1 text-fg ">
           <li>As sessões expiram automaticamente; trocar a senha encerra as sessões em outros dispositivos.</li>
           <li>Após 5 tentativas de login erradas a conta é bloqueada por 15 minutos.</li>
           {isDesktop ? (

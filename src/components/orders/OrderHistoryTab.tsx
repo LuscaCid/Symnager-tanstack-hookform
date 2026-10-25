@@ -79,12 +79,12 @@ export function OrderHistoryTab({ order }: { order: Order }) {
       {history.length === 0 ? (
         <EmptyState icon={MessageSquare} title="Sem eventos ainda" />
       ) : (
-        <ol className="relative flex flex-col gap-3 pl-5 before:absolute before:left-[9px] before:top-1 before:bottom-1 before:w-px before:bg-zinc-300 dark:before:bg-zinc-800">
+        <ol className="relative flex flex-col gap-3 pl-5 before:absolute before:left-[9px] before:top-1 before:bottom-1 before:w-px before:bg-subtle ">
           {history.map((h) => {
             const Icon = ICONS[h.type] ?? MessageSquare
             return (
               <li key={h.history_id} className="relative">
-                <span className="absolute -left-5 top-0 w-5 h-5 flex items-center justify-center rounded-full border border-zinc-300 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950">
+                <span className="absolute -left-5 top-0 w-5 h-5 flex items-center justify-center rounded-full border border-line bg-app ">
                   <Icon size={11} />
                 </span>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -96,12 +96,12 @@ export function OrderHistoryTab({ order }: { order: Order }) {
                       <StatusBadge status={h.to_status as OrderStatus} />
                     </span>
                   )}
-                  <span className="text-xs text-zinc-500" title={formatDateTime(h.created_at)}>
+                  <span className="text-xs text-faint" title={formatDateTime(h.created_at)}>
                     {formatRelative(h.created_at)}
                     {h.user && ` · ${h.user.name}`}
                   </span>
                 </div>
-                {h.message && <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap mt-0.5">{h.message}</p>}
+                {h.message && <p className="text-sm text-fg whitespace-pre-wrap mt-0.5">{h.message}</p>}
               </li>
             )
           })}

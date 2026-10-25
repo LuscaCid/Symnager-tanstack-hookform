@@ -102,12 +102,12 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-zinc-800/50" />
-        <Dialog.Content className="fixed z-50 top-[15vh] left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] max-w-xl rounded-md border border-zinc-300 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 shadow-2xl text-zinc-950 dark:text-zinc-200 overflow-hidden">
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/35" />
+        <Dialog.Content className="fixed z-50 top-[15vh] left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] max-w-xl rounded-xl border border-line bg-surface shadow-2xl text-fg overflow-hidden">
           <Dialog.Title className="sr-only">Busca global</Dialog.Title>
           <Dialog.Description className="sr-only">Pesquise telas, ordens de serviço e clientes</Dialog.Description>
-          <div className="flex items-center gap-2 px-3 border-b border-zinc-300 dark:border-zinc-800">
-            <Search size={18} className="text-zinc-500" />
+          <div className="flex items-center gap-2 px-3 border-b border-line ">
+            <Search size={18} className="text-faint" />
             <input
               autoFocus
               value={query}
@@ -120,10 +120,10 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
               aria-label="Buscar"
               className="flex-1 bg-transparent py-3 focus:outline-none"
             />
-            <kbd className="text-xs text-zinc-500 border border-zinc-300 dark:border-zinc-800 rounded px-1">Esc</kbd>
+            <kbd className="text-xs text-faint border border-line rounded px-1">Esc</kbd>
           </div>
           <ul role="listbox" className="max-h-80 overflow-y-auto p-1">
-            {entries.length === 0 && <li className="p-3 text-sm text-zinc-500">Nada encontrado.</li>}
+            {entries.length === 0 && <li className="p-3 text-sm text-faint">Nada encontrado.</li>}
             {entries.map((entry, index) => {
               const Icon = entry.icon
               return (
@@ -132,14 +132,14 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                     onMouseEnter={() => setActive(index)}
                     onClick={() => go(entry)}
                     className={cn(
-                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-left text-sm transition duration-100",
-                      index === active && "bg-zinc-200 dark:bg-zinc-800/80",
+                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition duration-100",
+                      index === active && "bg-hover",
                     )}
                   >
                     <Icon size={16} className="shrink-0" />
                     <span className="flex-1 truncate">{entry.label}</span>
-                    {entry.hint && <span className="text-xs text-zinc-500 truncate max-w-[40%]">{entry.hint}</span>}
-                    {index === active && <CornerDownLeft size={14} className="text-zinc-500" />}
+                    {entry.hint && <span className="text-xs text-faint truncate max-w-[40%]">{entry.hint}</span>}
+                    {index === active && <CornerDownLeft size={14} className="text-faint" />}
                   </button>
                 </li>
               )

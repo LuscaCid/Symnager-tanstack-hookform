@@ -55,7 +55,7 @@ const columns: Column<Order>[] = [
     key: "technician",
     header: "Técnico",
     hideOnMobile: true,
-    render: (o) => o.technician?.name ?? <span className="text-zinc-500">—</span>,
+    render: (o) => o.technician?.name ?? <span className="text-faint">—</span>,
   },
   { key: "arrived", header: "Entrada", hideOnMobile: true, className: "whitespace-nowrap", render: (o) => formatDate(o.arrived_at) },
   {
@@ -146,7 +146,7 @@ function OrdersList() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      <div className="shrink-0 flex flex-col gap-2 p-2 border-b border-zinc-300 dark:border-zinc-800">
+      <div className="shrink-0 flex flex-col gap-2 p-2 border-b border-line ">
         <SearchInput value={query} onChange={setQuery} placeholder="Buscar por nº, cliente, equipamento, série ou código de rastreio" />
         <div className="flex flex-wrap gap-1" role="group" aria-label="Filtrar por status">
           {ORDER_STATUSES.map((status) => {
@@ -159,8 +159,8 @@ function OrdersList() {
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition duration-200",
                   active
-                    ? "border-zinc-950 dark:border-zinc-200 bg-zinc-200 dark:bg-zinc-800"
-                    : "border-zinc-300 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+                    ? "border-accent bg-accent-soft text-accent font-medium"
+                    : "border-line  text-muted  hover:bg-hover ",
                 )}
               >
                 <span className="w-2 h-2 rounded-full" style={{ background: STATUS_HEX[status] }} />
@@ -270,13 +270,13 @@ export default function Orders() {
         subtitle={view === "board" ? "Arraste os cartões entre as colunas para mudar o status" : undefined}
         actions={
           <>
-            <div role="group" aria-label="Modo de visualização" className="flex rounded-md border border-zinc-300 dark:border-zinc-800 overflow-hidden">
+            <div role="group" aria-label="Modo de visualização" className="flex rounded-md border border-line overflow-hidden">
               <button
                 onClick={() => setView("list")}
                 aria-pressed={view === "list"}
                 className={cn(
                   "flex items-center gap-1 px-2 py-1 text-sm transition duration-200",
-                  view === "list" ? "bg-zinc-200 dark:bg-zinc-800 font-semibold" : "hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+                  view === "list" ? "bg-surface shadow-sm text-fg font-medium" : "text-muted hover:text-fg",
                 )}
               >
                 <List size={16} /> Lista
@@ -285,8 +285,8 @@ export default function Orders() {
                 onClick={() => setView("board")}
                 aria-pressed={view === "board"}
                 className={cn(
-                  "flex items-center gap-1 px-2 py-1 text-sm border-l border-zinc-300 dark:border-zinc-800 transition duration-200",
-                  view === "board" ? "bg-zinc-200 dark:bg-zinc-800 font-semibold" : "hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+                  "flex items-center gap-1 px-2 py-1 text-sm border-l border-line  transition duration-200",
+                  view === "board" ? "bg-surface shadow-sm text-fg font-medium" : "text-muted hover:text-fg",
                 )}
               >
                 <LayoutGrid size={16} /> Quadro

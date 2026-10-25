@@ -16,7 +16,7 @@ interface PropsDrilling{
 export function SelectClientSection ({selectedUser, handleSelectUser, handleRemoveSelectedUser, error} : PropsDrilling) {
 
     const styleOfButton = cn(
-      'font-bold items-center flex justify-between dark:text-zinc-300 w-full bg-transparent p-2 border dark:hover:bg-zinc-800/80 border-zinc-300 dark:border-zinc-800 rounded-md hover:bg-zinc-200/50 transition duration-200 cursor-text',
+      'font-semibold items-center flex justify-between  w-full bg-transparent p-2 border  border-line  rounded-md hover:bg-hover transition duration-200 cursor-text',
       selectedUser === null && 'animate-pulse',
       error && 'border-red-500 dark:border-red-500/70',
     )
@@ -31,14 +31,14 @@ export function SelectClientSection ({selectedUser, handleSelectUser, handleRemo
           </Dialog.Trigger>
           <ModalContent handleSelectUser={handleSelectUser} />
         </Dialog.Root>
-        <span className='p-2 border flex items-center justify-between gap-2 dark:border-zinc-800 border-zinc-300 rounded-md transition duration-200'>
+        <span className='p-2 border flex items-center justify-between gap-2 border-line rounded-md transition duration-200'>
           {
             selectedUser?.name ? (
               <span className="min-w-0">
                 <strong className="block truncate">{selectedUser.name}</strong>
-                {selectedUser.phone && <span className="text-xs text-zinc-600 dark:text-zinc-400">{formatPhone(selectedUser.phone)}</span>}
+                {selectedUser.phone && <span className="text-xs text-muted ">{formatPhone(selectedUser.phone)}</span>}
               </span>
-            ) : <span className="flex items-center text-zinc-600 dark:text-zinc-400"> Selecione um cliente acima <ArrowUp size={20} className="mx-4" /></span>
+            ) : <span className="flex items-center text-muted "> Selecione um cliente acima <ArrowUp size={20} className="mx-4" /></span>
           }
           {
             selectedUser?.name && (

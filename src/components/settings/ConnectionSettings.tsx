@@ -40,14 +40,14 @@ function ModeCard({
       className={cn(
         "flex-1 text-left flex gap-2 p-3 rounded-md border transition duration-200",
         active
-          ? "border-zinc-950 dark:border-zinc-200 bg-zinc-200 dark:bg-zinc-800/80"
-          : "border-zinc-300 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+          ? "border-accent bg-accent-soft text-accent font-medium"
+          : "border-line  hover:bg-hover ",
       )}
     >
       <Icon size={22} className="shrink-0 mt-0.5" />
       <span>
         <strong className="block">{title}</strong>
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">{description}</span>
+        <span className="text-sm text-muted ">{description}</span>
       </span>
     </button>
   )
@@ -139,7 +139,7 @@ function DesktopConnection() {
       </div>
 
       {config.mode === "local" ? (
-        <div className="flex flex-col gap-2 border border-zinc-300 dark:border-zinc-800 rounded-md p-2 text-sm">
+        <div className="flex flex-col gap-2 border border-line rounded-md p-2 text-sm">
           <p>
             <strong>Status:</strong>{" "}
             {runtime?.apiStatus === "running" ? (

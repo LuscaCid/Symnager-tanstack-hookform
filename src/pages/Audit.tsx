@@ -43,8 +43,8 @@ function AuditRow({ log, expanded, onToggle }: { log: AuditLog; expanded: boolea
       <tr
         onClick={meta ? onToggle : undefined}
         className={cn(
-          "border-t border-zinc-300 dark:border-zinc-800",
-          meta && "cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200",
+          "border-t border-line ",
+          meta && "cursor-pointer hover:bg-hover  transition duration-200",
         )}
       >
         <td className="px-2 py-1.5 w-6">
@@ -56,23 +56,23 @@ function AuditRow({ log, expanded, onToggle }: { log: AuditLog; expanded: boolea
                 e.stopPropagation()
                 onToggle()
               }}
-              className="p-0.5 rounded hover:bg-zinc-300 dark:hover:bg-zinc-700"
+              className="p-0.5 rounded hover:bg-hover "
             >
               {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>
           )}
         </td>
         <td className="px-2 py-1.5 whitespace-nowrap tabular-nums">{formatDateTime(log.created_at)}</td>
-        <td className="px-2 py-1.5">{log.user?.name ?? <span className="text-zinc-500">sistema</span>}</td>
+        <td className="px-2 py-1.5">{log.user?.name ?? <span className="text-faint">sistema</span>}</td>
         <td className={cn("px-2 py-1.5 font-mono text-xs font-semibold", actionTone(log.action))}>{log.action}</td>
         <td className="px-2 py-1.5 hidden md:table-cell">
           {log.entity}
-          {log.entity_id && <span className="text-zinc-500"> #{log.entity_id}</span>}
+          {log.entity_id && <span className="text-faint"> #{log.entity_id}</span>}
         </td>
-        <td className="px-2 py-1.5 hidden md:table-cell font-mono text-xs text-zinc-500">{log.ip ?? "—"}</td>
+        <td className="px-2 py-1.5 hidden md:table-cell font-mono text-xs text-faint">{log.ip ?? "—"}</td>
       </tr>
       {expanded && meta && (
-        <tr className="bg-zinc-200/60 dark:bg-zinc-900">
+        <tr className="bg-subtle/60 ">
           <td />
           <td colSpan={5} className="px-2 py-2">
             <pre className="text-xs font-mono whitespace-pre-wrap break-all max-h-64 overflow-auto">{meta}</pre>
@@ -110,9 +110,9 @@ export default function Audit() {
           <EmptyState icon={ShieldCheck} title="Nenhum registro encontrado" />
         ) : (
           <>
-            <div className="w-full overflow-x-auto rounded-md border border-zinc-300 dark:border-zinc-800">
+            <div className="w-full overflow-x-auto rounded-md border border-line ">
               <table className="w-full text-sm border-collapse">
-                <thead className="bg-zinc-200 dark:bg-zinc-800/80 text-left">
+                <thead className="bg-subtle text-left">
                   <tr>
                     <th scope="col" className="px-2 py-1.5">
                       <span className="sr-only">Detalhes</span>

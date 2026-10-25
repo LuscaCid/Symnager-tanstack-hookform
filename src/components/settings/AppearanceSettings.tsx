@@ -33,8 +33,8 @@ export function AppearanceSettings() {
       className={cn(
         "flex-1 flex items-center justify-center gap-2 p-3 rounded-md border transition duration-200",
         theme === value
-          ? "border-zinc-950 dark:border-zinc-200 bg-zinc-200 dark:bg-zinc-800/80 font-semibold"
-          : "border-zinc-300 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+          ? "border-accent bg-accent-soft text-accent font-medium"
+          : "border-line  hover:bg-hover ",
       )}
     >
       <Icon size={20} /> {label}
@@ -53,7 +53,7 @@ export function AppearanceSettings() {
         <div className="flex flex-col gap-3">
           <Checkbox label="Menu lateral expandido" checked={sidebarOpen} onChange={() => toggleSidebar()} />
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="text-sm text-muted ">
               As telas divididas lembram a largura que você arrastou. Também é possível dar duplo clique na divisória.
             </p>
             <Button size="sm" onClick={resetPanelSizes}>

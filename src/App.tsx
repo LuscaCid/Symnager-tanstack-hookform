@@ -27,13 +27,30 @@ const queryClient = new QueryClient({
 
 function ThemedToaster() {
   const theme = useContextSelector(ThemeContext, (c) => c.theme)
-  return <Toaster theme={theme} position="bottom-right" richColors closeButton />
+  return (
+    <Toaster
+      theme={theme}
+      position="bottom-right"
+      closeButton
+      toastOptions={{
+        classNames: {
+          toast: "!bg-surface !border !border-line !text-fg !rounded-xl !shadow-lg !font-sans",
+          description: "!text-muted",
+          actionButton: "!bg-accent !text-accent-fg !rounded-md",
+          cancelButton: "!bg-subtle !text-fg !rounded-md",
+          success: "[&_[data-icon]]:!text-success",
+          error: "[&_[data-icon]]:!text-danger",
+          warning: "[&_[data-icon]]:!text-warning",
+        },
+      }}
+    />
+  )
 }
 
 function App() {
 
   return (
-    <div className="absolute inset-0 overflow-hidden p-1 text-zinc-950 bg-zinc-100 dark:bg-zinc-950 dark:text-zinc-200 print:static print:p-0 print:bg-white print:text-black print:overflow-visible">
+    <div className="absolute inset-0 overflow-hidden text-fg bg-app print:static print:p-0 print:bg-white print:text-black print:overflow-visible">
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <AuthProvider>

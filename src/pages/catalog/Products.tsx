@@ -143,7 +143,7 @@ function ProductForm({ selected, close, select, canWrite }: CatalogFormContext<P
           />
           {selected ? (
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Estoque atual</span>
+              <span className="text-xs font-semibold text-muted ">Estoque atual</span>
               <div className="flex items-center gap-2">
                 <strong className={cn("text-lg tabular-nums", isLow(selected) && "text-red-500")}>
                   {formatNumber(selected.stock)} {selected.unit}
@@ -240,7 +240,7 @@ export default function Products() {
               <span className="flex items-center gap-2 font-semibold">
                 {p.name} <ActiveBadge active={p.active} />
               </span>
-              {p.sku && <span className="text-xs text-zinc-500 font-mono">{p.sku}</span>}
+              {p.sku && <span className="text-xs text-faint font-mono">{p.sku}</span>}
             </span>
           ),
         },

@@ -70,7 +70,7 @@ export function OrderPaymentsTab({ order, readOnly }: { order: Order; readOnly?:
     <div className="flex flex-col gap-2">
       <OrderTotals order={order} />
       {!readOnly && canManage && (
-        <form onSubmit={submit} className="flex flex-col gap-2 border border-zinc-300 dark:border-zinc-800 rounded-md p-2">
+        <form onSubmit={submit} className="flex flex-col gap-2 border border-line rounded-md p-2">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <SelectField label="Forma de pagamento" value={method} onChange={(e) => setMethod(e.target.value)}>
               {methods.data?.length === 0 && <option value="">Cadastre em Cadastros auxiliares</option>}
@@ -98,10 +98,10 @@ export function OrderPaymentsTab({ order, readOnly }: { order: Order; readOnly?:
         ) : (
           <ul className="flex flex-col">
             {payments.map((p) => (
-              <li key={p.payment_id} className="flex items-center gap-2 px-2 py-1.5 border-t first:border-t-0 border-zinc-300 dark:border-zinc-800 text-sm">
+              <li key={p.payment_id} className="flex items-center gap-2 px-2 py-1.5 border-t first:border-t-0 border-line text-sm">
                 <div className="flex-1 min-w-0">
                   <strong>{p.method}</strong>
-                  <span className="block text-xs text-zinc-500 truncate">
+                  <span className="block text-xs text-faint truncate">
                     {formatDateTime(p.paid_at)}
                     {p.user && ` · ${p.user.name}`}
                     {p.notes && ` · ${p.notes}`}

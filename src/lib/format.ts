@@ -94,15 +94,15 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
 }
 
 export const STATUS_COLOR: Record<OrderStatus, string> = {
-  ABERTA: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300 border-zinc-500/30",
-  EM_ANALISE: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
-  AGUARDANDO_APROVACAO: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-  APROVADA: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30",
-  AGUARDANDO_PECA: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
-  EM_REPARO: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30",
-  PRONTA: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-  ENTREGUE: "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30",
-  CANCELADA: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30",
+  ABERTA: "bg-faint/15 text-muted",
+  EM_ANALISE: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
+  AGUARDANDO_APROVACAO: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  APROVADA: "bg-indigo-500/12 text-indigo-700 dark:text-indigo-300",
+  AGUARDANDO_PECA: "bg-orange-500/12 text-orange-700 dark:text-orange-300",
+  EM_REPARO: "bg-violet-500/12 text-violet-700 dark:text-violet-300",
+  PRONTA: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
+  ENTREGUE: "bg-green-500/12 text-green-700 dark:text-green-300",
+  CANCELADA: "bg-red-500/12 text-red-700 dark:text-red-300",
 }
 
 /** Cor sólida para gráficos (mesma família do badge). */
@@ -128,10 +128,10 @@ export const PRIORITY_LABEL: Record<Priority, string> = {
 }
 
 export const PRIORITY_COLOR: Record<Priority, string> = {
-  BAIXA: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300 border-zinc-500/30",
-  NORMAL: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
-  ALTA: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-  URGENTE: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30",
+  BAIXA: "bg-faint/15 text-muted",
+  NORMAL: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
+  ALTA: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  URGENTE: "bg-red-500/12 text-red-700 dark:text-red-300",
 }
 
 export const ROLE_LABEL: Record<Role, string> = {

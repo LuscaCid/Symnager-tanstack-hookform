@@ -26,7 +26,7 @@ export function StockMovements({ productId, unit }: { productId: number; unit: s
 
   return (
     <section className="flex flex-col gap-2 mt-3">
-      <h3 className="flex items-center gap-2 font-bold bg-zinc-200 dark:bg-zinc-800/80 rounded-sm p-1">
+      <h3 className="flex items-center gap-2 text-sm font-semibold">
         <History size={16} /> Movimentações
       </h3>
       {isLoading ? (

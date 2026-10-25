@@ -56,7 +56,7 @@ export function ItemPicker({ kind, onPick }: { kind: "SERVICE" | "PRODUCT"; onPi
 
   return (
     <div ref={boxRef} className="relative w-full">
-      <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+      <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-faint pointer-events-none" />
       <input
         value={query}
         onChange={(e) => {
@@ -87,10 +87,10 @@ export function ItemPicker({ kind, onPick }: { kind: "SERVICE" | "PRODUCT"; onPi
       {open && (
         <ul
           role="listbox"
-          className="absolute z-30 mt-1 w-full max-h-60 overflow-y-auto rounded-md border border-zinc-300 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 shadow-xl p-1"
+          className="absolute z-30 mt-1 w-full max-h-60 overflow-y-auto rounded-md border border-line bg-app  shadow-xl p-1"
         >
           {results.length === 0 && (
-            <li className="p-2 text-sm text-zinc-500">{isFetching ? "Buscando..." : "Nada encontrado no catálogo."}</li>
+            <li className="p-2 text-sm text-faint">{isFetching ? "Buscando..." : "Nada encontrado no catálogo."}</li>
           )}
           {results.map((item, i) => (
             <li key={item.id} role="option" aria-selected={i === active}>
@@ -99,12 +99,12 @@ export function ItemPicker({ kind, onPick }: { kind: "SERVICE" | "PRODUCT"; onPi
                 onMouseEnter={() => setActive(i)}
                 onClick={() => pick(item)}
                 className={cn(
-                  "w-full flex items-center justify-between gap-2 px-2 py-1 rounded-sm text-sm text-left",
-                  i === active && "bg-zinc-200 dark:bg-zinc-800/80",
+                  "w-full flex items-center justify-between gap-2 px-2 py-1 rounded-lg text-sm text-left",
+                  i === active && "bg-hover",
                 )}
               >
                 <span className="truncate">{item.name}</span>
-                <span className="shrink-0 text-xs text-zinc-500 tabular-nums">
+                <span className="shrink-0 text-xs text-faint tabular-nums">
                   {item.stock !== undefined && (
                     <span className={cn("mr-2", item.stock <= 0 && "text-red-500")}>est. {formatNumber(item.stock)}</span>
                   )}

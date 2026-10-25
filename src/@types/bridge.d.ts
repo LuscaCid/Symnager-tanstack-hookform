@@ -40,6 +40,21 @@ export interface FileFilter {
   extensions: string[]
 }
 
+export interface WindowState {
+  maximized: boolean
+  fullscreen: boolean
+  focused: boolean
+}
+
+export interface WindowControls {
+  minimize(): Promise<void>
+  toggleMaximize(): Promise<boolean>
+  toggleFullScreen(): Promise<boolean>
+  close(): Promise<void>
+  getState(): Promise<WindowState>
+  onState(cb: (state: WindowState) => void): () => void
+}
+
 export interface SymnagerBridge {
   isElectron: true
   getRuntime(): Promise<DesktopRuntime>
@@ -58,6 +73,8 @@ export interface SymnagerBridge {
   openExternal(url: string): Promise<void>
   showItemInFolder(path: string): Promise<void>
   backupNow(): Promise<{ ok: boolean; path?: string; error?: string }>
+  platform: string
+  windowControls: WindowControls
   onApiStatus(cb: (runtime: DesktopRuntime) => void): () => void
 }
 

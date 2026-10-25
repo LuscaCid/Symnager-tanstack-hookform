@@ -13,25 +13,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  default:
-    "bg-transparent border border-zinc-300 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
-  primary:
-    "bg-zinc-950 text-zinc-100 border border-zinc-950 hover:bg-zinc-800 dark:bg-zinc-200 dark:text-zinc-950 dark:border-zinc-200 dark:hover:bg-zinc-300",
-  success:
-    "bg-zinc-200 dark:bg-zinc-800/80 border border-transparent hover:bg-green-300 dark:hover:bg-green-900",
-  danger:
-    "bg-zinc-200 dark:bg-zinc-800/80 border border-transparent hover:bg-red-300 dark:hover:bg-red-800",
-  ghost: "bg-transparent border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+  default: "bg-surface text-fg border border-line shadow-sm hover:bg-hover hover:border-line-strong",
+  primary: "bg-accent text-accent-fg border border-transparent shadow-sm hover:bg-accent-strong",
+  success: "bg-surface text-success border border-line shadow-sm hover:bg-success/10 hover:border-success/40",
+  danger: "bg-surface text-danger border border-line shadow-sm hover:bg-danger/10 hover:border-danger/40",
+  ghost: "bg-transparent text-muted border border-transparent hover:bg-hover hover:text-fg",
 }
 
 const sizes: Record<Size, string> = {
-  sm: "text-sm px-2 py-1 gap-1",
-  md: "px-3 py-2 gap-2",
-}
-
-const iconColor: Partial<Record<Variant, string>> = {
-  success: "text-green-500",
-  danger: "text-red-500",
+  sm: "h-8 text-[13px] px-2.5 gap-1.5",
+  md: "h-9 text-sm px-3.5 gap-2",
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -44,8 +35,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center rounded-md font-semibold transition duration-200 whitespace-nowrap",
-        "disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-500",
+        "inline-flex items-center justify-center rounded-lg font-medium transition-colors duration-150 whitespace-nowrap select-none",
+        "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-1 focus-visible:ring-offset-app",
         variants[variant],
         sizes[size],
         className,
@@ -53,9 +45,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {...props}
     >
       {loading ? (
-        <Loader className="animate-spin" size={size === "sm" ? 16 : 20} />
+        <Loader className="animate-spin" size={size === "sm" ? 14 : 16} />
       ) : (
-        Icon && <Icon className={iconColor[variant]} size={size === "sm" ? 16 : 20} />
+        Icon && <Icon size={size === "sm" ? 14 : 16} strokeWidth={2} />
       )}
       {children}
     </button>
@@ -75,13 +67,15 @@ export function IconButton({ icon: Icon, label, tone = "default", className, typ
       aria-label={label}
       title={label}
       className={cn(
-        "p-1 rounded-md bg-transparent hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
-        tone === "danger" && "text-red-500 hover:text-red-600",
+        "inline-flex items-center justify-center h-8 w-8 rounded-lg text-muted transition-colors duration-150",
+        "hover:bg-hover hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+        tone === "danger" && "hover:text-danger hover:bg-danger/10",
         className,
       )}
       {...props}
     >
-      <Icon size={18} />
+      <Icon size={17} />
     </button>
   )
 }

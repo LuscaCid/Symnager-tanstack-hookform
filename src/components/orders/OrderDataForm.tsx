@@ -140,7 +140,7 @@ export function OrderDataForm({ order, readOnly }: { order: Order; readOnly?: bo
       className="flex flex-col gap-2 p-2"
     >
       {isTechnician && !readOnly && (
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-800 rounded-md p-2">
+        <p className="text-xs text-muted border border-line  rounded-md p-2">
           Como técnico, suas alterações salvas são: diagnóstico, solução, observações internas, nº de série e estado físico.
         </p>
       )}
@@ -241,7 +241,7 @@ export function OrderDataForm({ order, readOnly }: { order: Order; readOnly?: bo
       </fieldset>
 
       {!readOnly && (
-        <div className="sticky bottom-0 flex gap-2 justify-end bg-zinc-100/90 dark:bg-zinc-950/90 backdrop-blur py-2 border-t border-zinc-300 dark:border-zinc-800">
+        <div className="sticky bottom-0 flex gap-2 justify-end bg-app/90 backdrop-blur py-2 border-t border-line ">
           <Button icon={Undo2} disabled={!isDirty || mutation.isPending} onClick={() => reset(toForm(order))}>
             Descartar
           </Button>

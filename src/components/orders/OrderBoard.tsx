@@ -33,17 +33,17 @@ function BoardCard({ order, onDragStart, onDragEnd }: { order: Order; onDragStar
       role="button"
       aria-label={`${formatOrderNumber(order.number)} ${order.device}`}
       className={cn(
-        "group flex flex-col gap-1 p-2 rounded-md border bg-zinc-100 dark:bg-zinc-950 shadow-sm cursor-grab active:cursor-grabbing",
-        "hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200 focus:outline-none focus-visible:border-zinc-500",
-        overdue ? "border-red-500/60" : "border-zinc-300 dark:border-zinc-800",
+        "group flex flex-col gap-1 p-2 rounded-md border bg-app  shadow-sm cursor-grab active:cursor-grabbing",
+        "hover:bg-hover  transition duration-200 focus:outline-none focus-visible:border-line-strong",
+        overdue ? "border-red-500/60" : "border-line ",
       )}
     >
       <div className="flex items-center justify-between gap-1">
-        <span className="font-mono text-xs text-zinc-500">{formatOrderNumber(order.number)}</span>
-        <GripVertical size={14} className="text-zinc-400 opacity-0 group-hover:opacity-100 transition duration-200" />
+        <span className="font-mono text-xs text-faint">{formatOrderNumber(order.number)}</span>
+        <GripVertical size={14} className="text-faint opacity-0 group-hover:opacity-100 transition duration-200" />
       </div>
       <strong className="text-sm leading-tight line-clamp-2">{order.device}</strong>
-      <span className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 truncate">
+      <span className="flex items-center gap-1 text-xs text-muted truncate">
         <User size={12} className="shrink-0" /> {order.owner?.name ?? "—"}
       </span>
       <div className="flex flex-wrap items-center gap-1">
@@ -52,7 +52,7 @@ function BoardCard({ order, onDragStart, onDragEnd }: { order: Order; onDragStar
           <span
             className={cn(
               "inline-flex items-center gap-1 text-xs",
-              overdue ? "text-red-500 font-semibold" : "text-zinc-600 dark:text-zinc-400",
+              overdue ? "text-red-500 font-semibold" : "text-muted ",
             )}
             title={overdue ? "Prazo vencido" : "Previsão de entrega"}
           >
@@ -61,7 +61,7 @@ function BoardCard({ order, onDragStart, onDragEnd }: { order: Order; onDragStar
         )}
         {order.total > 0 && <span className="ml-auto text-xs font-semibold tabular-nums">{formatMoney(order.total)}</span>}
       </div>
-      {order.technician && <span className="text-xs text-zinc-500 truncate">Téc.: {order.technician.name}</span>}
+      {order.technician && <span className="text-xs text-faint truncate">Téc.: {order.technician.name}</span>}
     </div>
   )
 }
@@ -110,16 +110,16 @@ export function OrderBoard() {
             }}
             onDrop={(e) => handleDrop(e, status)}
             className={cn(
-              "w-64 shrink-0 h-full flex flex-col rounded-md border transition duration-200",
+              "w-72 shrink-0 h-full flex flex-col rounded-xl border transition duration-200",
               isTarget
-                ? "border-zinc-500 bg-zinc-200 dark:bg-zinc-800/60"
-                : "border-zinc-300 dark:border-zinc-800 bg-zinc-200/40 dark:bg-zinc-900/40",
+                ? "border-accent/50 bg-accent-soft/60"
+                : "border-transparent bg-subtle/70",
             )}
           >
-            <header className="shrink-0 flex items-center gap-2 p-2 border-b border-zinc-300 dark:border-zinc-800">
+            <header className="shrink-0 flex items-center gap-2 p-2 border-b border-line ">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_HEX[status] }} />
-              <h2 className="font-bold text-sm flex-1 truncate">{STATUS_LABEL[status]}</h2>
-              <span className="text-xs font-semibold tabular-nums text-zinc-500">{orders.length}</span>
+              <h2 className="font-semibold text-sm flex-1 truncate">{STATUS_LABEL[status]}</h2>
+              <span className="text-xs font-semibold tabular-nums text-faint">{orders.length}</span>
             </header>
             <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2">
               {orders.map((order) => (
@@ -134,7 +134,7 @@ export function OrderBoard() {
                 />
               ))}
               {orders.length === 0 && (
-                <span className="text-xs text-zinc-500 text-center py-4 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-md">
+                <span className="text-xs text-faint text-center py-4 border border-dashed border-line rounded-md">
                   {status === "ENTREGUE" || status === "CANCELADA" ? "Últimos 7 dias" : "Solte aqui"}
                 </span>
               )}

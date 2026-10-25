@@ -16,7 +16,7 @@ export function Pareto({ items, onSelect }: { items: KeyCount[]; onSelect?: (key
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="grid grid-cols-[minmax(0,10rem)_1fr_3.5rem_3.5rem] gap-2 text-xs font-semibold text-zinc-500 px-1">
+      <div className="grid grid-cols-[minmax(0,10rem)_1fr_3.5rem_3.5rem] gap-2 text-xs font-semibold text-faint px-1">
         <span>Motivo</span>
         <span>Ocorrências</span>
         <span className="text-right">%</span>
@@ -38,10 +38,10 @@ export function Pareto({ items, onSelect }: { items: KeyCount[]; onSelect?: (key
                 title={`${item.key}: ${item.count} (${Math.round(share * 100)}%)`}
                 className={cn(
                   "w-full grid grid-cols-[minmax(0,10rem)_1fr_3.5rem_3.5rem] gap-2 items-center px-1 py-0.5 rounded-sm text-sm text-left",
-                  onSelect && "hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200",
+                  onSelect && "hover:bg-hover  transition duration-200",
                 )}
               >
-                <span className={cn("truncate", vital ? "font-semibold" : "text-zinc-600 dark:text-zinc-400")}>{item.key || "Não informado"}</span>
+                <span className={cn("truncate", vital ? "font-semibold" : "text-muted ")}>{item.key || "Não informado"}</span>
                 <span className="flex items-center gap-2 min-w-0">
                   <span
                     className="h-3 rounded-r-[4px]"
@@ -50,7 +50,7 @@ export function Pareto({ items, onSelect }: { items: KeyCount[]; onSelect?: (key
                       background: vital ? t.series[1] : t.axis,
                     }}
                   />
-                  <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">{formatNumber(item.count)}</span>
+                  <span className="text-xs tabular-nums text-muted ">{formatNumber(item.count)}</span>
                 </span>
                 <span className="text-right tabular-nums text-xs">{Math.round(share * 100)}%</span>
                 <span className={cn("text-right tabular-nums text-xs", cumulative <= 0.8 && "font-semibold")}>{Math.round(cumulative * 100)}%</span>
@@ -60,7 +60,7 @@ export function Pareto({ items, onSelect }: { items: KeyCount[]; onSelect?: (key
         })}
       </ul>
       {sorted.length > 1 && (
-        <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1.5">
+        <p className="text-xs text-faint mt-1 flex items-center gap-1.5">
           <span className="inline-block w-3 h-2 rounded-sm" style={{ background: t.series[1] }} /> motivos que concentram ~80% das falhas
         </p>
       )}

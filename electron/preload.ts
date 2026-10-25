@@ -22,6 +22,21 @@ const bridge = {
   openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
   showItemInFolder: (target: string) => ipcRenderer.invoke("shell:showItem", target),
   backupNow: () => ipcRenderer.invoke("backup:now"),
+  platform: process.platform,
+  windowControls: {
+    minimize: () => ipcRenderer.invoke("window:minimize"),
+    toggleMaximize: () => ipcRenderer.invoke("window:toggleMaximize"),
+    toggleFullScreen: () => ipcRenderer.invoke("window:toggleFullScreen"),
+    close: () => ipcRenderer.invoke("window:close"),
+    getState: () => ipcRenderer.invoke("window:state"),
+    onState: (cb: (state: unknown) => void) => {
+      const listener = (_event: IpcRendererEvent, state: unknown) => cb(state)
+      ipcRenderer.on("window:state", listener)
+      return () => {
+        ipcRenderer.removeListener("window:state", listener)
+      }
+    },
+  },
   onApiStatus: (cb: (runtime: unknown) => void) => {
     const listener = (_event: IpcRendererEvent, runtime: unknown) => cb(runtime)
     ipcRenderer.on("api:status", listener)

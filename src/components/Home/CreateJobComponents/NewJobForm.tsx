@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ordersService } from '@/services/resources';
 import { useLookups, useTechnicians } from '@/lib/hooks';
-import { Button, SelectField, TextAreaField, TextField } from '@/components/ui';
+import { Button, inputClass, SelectField, TextAreaField, TextField } from '@/components/ui';
 import { PRIORITIES } from '@/@types/api';
 import { formatOrderNumber, PRIORITY_LABEL } from '@/lib/format';
 import { cn } from '@/lib/cn';
@@ -100,11 +100,11 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
       <form
         noValidate
         onSubmit={handleSubmit(handleSubmitForm, () => !userSelected && setClientError(true))}
-        className="border border-zinc-300 dark:border-zinc-800/80 rounded-md m-2 flex flex-col gap-2 pb-2"
+        className="bg-surface border border-line rounded-xl shadow-sm mx-4 mb-4 flex flex-col gap-3 pb-4"
       >
       <h1
-        className='bg-zinc-200 dark:bg-zinc-800/80 rounded-t-sm border-b p-1 px-2 dark:text-zinc-300 dark:border-zinc-800 border-zinc-300 w-full text-xl text-zinc-800 font-bold flex justify-between items-center'>
-        Nova ordem de serviço <PenBox size={28} />
+        className='px-4 pt-4 w-full text-base text-fg font-semibold flex justify-between items-center'>
+        Nova ordem de serviço <PenBox size={18} className='text-faint' />
       </h1>
 
       <SelectClientSection
@@ -123,13 +123,13 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
       <textarea
         aria-label='Defeito relatado'
         className={cn(
-          'p-2 mx-2 resize-y bg-transparent border dark:border-zinc-800 border-zinc-300 rounded-md shadow-md min-h-24 focus:outline-none focus:border-zinc-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600',
-          errors.description && 'border-red-500 dark:border-red-500/70',
+          inputClass, 'mx-4 h-auto py-2 resize-y min-h-24 leading-relaxed',
+          errors.description && 'border-danger/70',
         )}
         placeholder='Descrição relatando os problemas'
         {...register('description')}
       />
-      {errors.description && <span role="alert" className="mx-2 -mt-1 text-xs text-red-500">{errors.description.message}</span>}
+      {errors.description && <span role="alert" className="mx-4 -mt-1 text-xs text-red-500">{errors.description.message}</span>}
 
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
         <Input
@@ -147,7 +147,7 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
         />
       </div>
 
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-2 px-2'>
+      <div className='grid grid-cols-1 sm:grid-cols-3 gap-2 px-4'>
         <SelectField label='Prioridade' {...register('priority')}>
           {PRIORITIES.map((p) => <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>)}
         </SelectField>
@@ -162,14 +162,14 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
         type='button'
         onClick={() => setShowDetails((s) => !s)}
         aria-expanded={showDetails}
-        className='mx-2 flex items-center justify-between text-sm font-semibold p-1 px-2 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200'
+        className='mx-4 flex items-center justify-between text-[13px] font-medium text-muted h-9 px-3 rounded-lg bg-subtle/60 hover:bg-hover hover:text-fg transition-colors'
       >
         Detalhes do equipamento (marca, série, acessórios, senha, checklist)
         <ChevronDown size={18} className={cn('transition duration-200', showDetails && 'rotate-180')} />
       </button>
 
       {showDetails && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 px-2'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 px-4'>
           <SelectField label='Tipo de equipamento' {...register('device_type')}>
             <option value=''>—</option>
             {deviceTypes.data?.map((d) => <option key={d.lookup_id} value={d.name}>{d.name}</option>)}
@@ -193,10 +193,10 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
             {...register('condition')}
           />
           <div className='sm:col-span-2 flex flex-col gap-1'>
-            <span className='text-xs font-semibold text-zinc-600 dark:text-zinc-400'>Checklist de entrada</span>
+            <span className='text-[13px] font-medium text-muted'>Checklist de entrada</span>
             <ChecklistEditor value={checklist} onChange={setChecklist} />
           </div>
-          <p className='sm:col-span-2 text-xs text-zinc-500 flex items-center gap-1'>
+          <p className='sm:col-span-2 text-xs text-faint flex items-center gap-1'>
             <KeyRound size={12} /> A senha do aparelho só aparece para a equipe, nunca na consulta pública.
           </p>
         </div>
@@ -206,7 +206,8 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
         type='submit'
         loading={isPending}
         icon={PenLine}
-        className='mx-2 shadow-lg'
+        variant='primary'
+        className='mx-4'
       >
         Gerar OS
       </Button>

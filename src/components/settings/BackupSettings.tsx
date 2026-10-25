@@ -65,11 +65,11 @@ function ExportPanel() {
             Dados em JSON
           </Button>
         </div>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-faint">
           O arquivo .db é uma cópia completa e pode ser restaurado abaixo. O JSON não inclui senhas nem sessões.
         </p>
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Planilhas CSV (abrem no Excel)</span>
+          <span className="text-xs font-semibold text-muted ">Planilhas CSV (abrem no Excel)</span>
           <div className="flex flex-wrap gap-2">
             {CSV_ENTITIES.map((e) => (
               <Button
@@ -131,7 +131,7 @@ function RestorePanel() {
   return (
     <Panel title="Restaurar backup" icon={Upload}>
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-muted ">
           Substitui <strong>todos</strong> os dados atuais pelo arquivo .db escolhido. Antes disso o servidor guarda uma cópia do banco atual.
         </p>
         <input ref={inputRef} type="file" accept=".db,.sqlite" className="sr-only" onChange={handleInput} aria-label="Arquivo de backup" />
@@ -239,7 +239,7 @@ function AutoBackupPanel() {
               Escolher
             </Button>
           </div>
-          <p className="sm:col-span-2 text-xs text-zinc-500">
+          <p className="sm:col-span-2 text-xs text-faint">
             Dica: escolha uma pasta sincronizada (OneDrive, Google Drive) ou um pendrive para ter uma cópia fora do computador.
           </p>
         </div>

@@ -69,7 +69,7 @@ function LookupRow({
   return (
     <li
       className={cn(
-        "flex items-center gap-2 p-1 px-2 border border-zinc-300 dark:border-zinc-800 rounded-md transition duration-200",
+        "flex items-center gap-2 p-1 px-2 border border-line  rounded-md transition duration-200",
         !item.active && "opacity-60",
       )}
     >
@@ -104,10 +104,10 @@ function LookupRow({
       )}
       {canWrite && !editing && (
         <>
-          <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer select-none">
+          <label className="flex items-center gap-1 text-xs text-muted cursor-pointer select-none">
             <input
               type="checkbox"
-              className="accent-zinc-800 dark:accent-zinc-300"
+              className="accent-accent "
               checked={item.active}
               disabled={update.isPending}
               onChange={(e) => update.mutate({ active: e.target.checked })}
@@ -186,7 +186,7 @@ function LookupList({ kind, canWrite }: { kind: LookupKind; canWrite: boolean })
 
   return (
     <div className="flex flex-col gap-3 max-w-2xl">
-      <p className="text-sm text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-800 rounded-md p-2">{HINTS[kind]}</p>
+      <p className="text-sm text-muted border border-line  rounded-md p-2">{HINTS[kind]}</p>
       {canWrite && (
         <form onSubmit={submit} className="flex gap-2">
           <label htmlFor={`new-${kind}`} className="sr-only">

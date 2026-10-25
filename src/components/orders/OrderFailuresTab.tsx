@@ -78,12 +78,12 @@ export function OrderFailuresTab({ order }: { order: Order }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-muted ">
         Registre aqui entregas que não aconteceram, retornos em garantia, retrabalho e problemas com peças. Os dados alimentam o
         mapeamento de falhas.
       </p>
       {open ? (
-        <form onSubmit={submit} className="flex flex-col gap-2 border border-zinc-300 dark:border-zinc-800 rounded-md p-2">
+        <form onSubmit={submit} className="flex flex-col gap-2 border border-line rounded-md p-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <SelectField label="Categoria" value={category} onChange={(e) => setCategory(e.target.value as FailureCategory)}>
               {FAILURE_CATEGORIES.map((c) => (
@@ -137,7 +137,7 @@ export function OrderFailuresTab({ order }: { order: Order }) {
               key={f.failure_id}
               className={cn(
                 "flex flex-col gap-1 p-2 rounded-md border text-sm",
-                f.resolved ? "border-zinc-300 dark:border-zinc-800" : "border-red-500/40",
+                f.resolved ? "border-line " : "border-red-500/40",
               )}
             >
               <div className="flex flex-wrap items-center gap-2">
@@ -145,9 +145,9 @@ export function OrderFailuresTab({ order }: { order: Order }) {
                   {FAILURE_CATEGORY_LABEL[f.category]}
                 </Badge>
                 <strong className="flex-1 min-w-0 truncate">{f.reason}</strong>
-                <span className="text-xs text-zinc-500">{formatDateTime(f.occurred_at)}</span>
+                <span className="text-xs text-faint">{formatDateTime(f.occurred_at)}</span>
               </div>
-              {f.description && <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{f.description}</p>}
+              {f.description && <p className="text-fg whitespace-pre-wrap">{f.description}</p>}
               {f.resolved ? (
                 <p className="text-green-600 dark:text-green-400 flex items-start gap-1">
                   <CheckCircle2 size={14} className="shrink-0 mt-0.5" />

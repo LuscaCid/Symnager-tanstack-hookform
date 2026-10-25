@@ -89,19 +89,19 @@ export default function ClientDetails () {
                 <StatCard icon={Wallet} label="Total gasto" value={formatMoney(data.stats?.total_spent)} />
                 <StatCard icon={CalendarClock} label="Última OS" value={data.stats?.last_order_at ? formatRelative(data.stats.last_order_at) : '—'} />
             </div>
-            <div className="flex-1 min-h-0 border-t border-zinc-300 dark:border-zinc-800">
+            <div className="flex-1 min-h-0 border-t border-line ">
                 <SplitPane
                     storageKey="cliente-detalhes"
                     defaultSize={55}
                     left={
                         <div className="h-full overflow-y-auto p-2">
-                            <h2 className="text-xl font-bold mb-2 bg-zinc-200 dark:bg-zinc-800/80 rounded-sm p-1">Editar dados</h2>
+                            <h2 className="text-sm font-semibold mb-3">Editar dados</h2>
                             <ClientForm client={data} submitLabel="Salvar alterações" />
                         </div>
                     }
                     right={
                         <div className="h-full flex flex-col min-h-0">
-                            <h2 className="shrink-0 m-2 mb-0 text-xl font-bold bg-zinc-200 dark:bg-zinc-800/80 rounded-sm p-1">Histórico de OS</h2>
+                            <h2 className="shrink-0 px-4 pt-4 text-sm font-semibold">Histórico de OS</h2>
                             <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2">
                                 {orders.isLoading ? <ListSkeleton count={3} /> :
                                  orders.data && orders.data.data.length > 0 ? (

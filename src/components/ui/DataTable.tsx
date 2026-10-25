@@ -22,15 +22,15 @@ interface DataTableProps<T> {
 export function DataTable<T>({ columns, rows, rowKey, onRowClick, empty }: DataTableProps<T>) {
   if (rows.length === 0 && empty) return <>{empty}</>
   return (
-    <div className="w-full overflow-x-auto rounded-md border border-zinc-300 dark:border-zinc-800">
+    <div className="w-full overflow-x-auto rounded-xl border border-line bg-surface shadow-sm">
       <table className="w-full text-sm border-collapse">
-        <thead className="bg-zinc-200 dark:bg-zinc-800/80 text-left">
+        <thead className="text-left text-xs text-muted border-b border-line">
           <tr>
             {columns.map((c) => (
               <th
                 key={c.key}
                 scope="col"
-                className={cn("px-2 py-1.5 font-semibold whitespace-nowrap", c.hideOnMobile && "hidden md:table-cell", c.className)}
+                className={cn("px-3 py-2.5 font-medium whitespace-nowrap", c.hideOnMobile && "hidden md:table-cell", c.className)}
               >
                 {c.header}
               </th>
@@ -45,13 +45,13 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, empty }: DataT
               tabIndex={onRowClick ? 0 : undefined}
               onKeyDown={onRowClick ? (e) => e.key === "Enter" && onRowClick(row) : undefined}
               className={cn(
-                "border-t border-zinc-300 dark:border-zinc-800",
+                "border-t border-line first:border-t-0",
                 onRowClick &&
-                  "cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200 focus:outline-none focus:bg-zinc-200 dark:focus:bg-zinc-800/80",
+                  "cursor-pointer hover:bg-hover/60 transition-colors duration-100 focus:outline-none focus:bg-hover/60",
               )}
             >
               {columns.map((c) => (
-                <td key={c.key} className={cn("px-2 py-1.5 align-middle", c.hideOnMobile && "hidden md:table-cell", c.className)}>
+                <td key={c.key} className={cn("px-3 py-2.5 align-middle", c.hideOnMobile && "hidden md:table-cell", c.className)}>
                   {c.render(row)}
                 </td>
               ))}
@@ -71,13 +71,13 @@ interface PaginationProps {
 }
 
 const pagerButton =
-  "p-1 rounded-md border border-zinc-300 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition duration-200"
+  "h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-surface shadow-sm hover:bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 
 export function Pagination({ page, pageSize, total, onChange }: PaginationProps) {
   const pages = Math.max(1, Math.ceil(total / pageSize))
   if (total === 0) return null
   return (
-    <nav aria-label="Paginação" className="flex items-center justify-between gap-2 py-2 text-sm text-zinc-600 dark:text-zinc-400">
+    <nav aria-label="Paginação" className="flex items-center justify-between gap-2 py-3 text-[13px] text-muted">
       <span>
         {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} de {total}
       </span>

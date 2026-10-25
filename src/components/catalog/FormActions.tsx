@@ -84,5 +84,5 @@ export function FormActions({
 }
 
 export function ActiveBadge({ active }: { active: boolean }) {
-  return active ? null : <Badge className="text-zinc-500">Inativo</Badge>
+  return active ? null : <Badge className="text-faint">Inativo</Badge>
 }

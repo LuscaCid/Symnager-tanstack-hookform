@@ -59,7 +59,7 @@ export function ChartCard({ title, icon, table, actions, children, className }: 
 }
 
 export function ChartSkeleton({ height = 220 }: { height?: number }) {
-  return <div className="w-full rounded-md bg-zinc-200 dark:bg-zinc-800/80 animate-pulse" style={{ height }} />
+  return <div className="w-full rounded-md bg-subtle animate-pulse" style={{ height }} />
 }
 
 export function NoData({ text = "Sem dados no período" }: { text?: string }) {
@@ -76,7 +76,7 @@ interface TooltipRow {
 export function TooltipBox({ title, rows, t }: { title?: string; rows: TooltipRow[]; t: ChartTheme }) {
   return (
     <div
-      className="rounded-md border border-zinc-300 dark:border-zinc-800 shadow-lg px-2 py-1.5 text-xs min-w-32"
+      className="rounded-md border border-line shadow-lg px-2 py-1.5 text-xs min-w-32"
       style={{ background: t.surface, color: t.textPrimary }}
     >
       {title && <div className="font-semibold mb-1" style={{ color: t.textSecondary }}>{title}</div>}
@@ -96,7 +96,7 @@ export function TooltipBox({ title, rows, t }: { title?: string; rows: TooltipRo
 /** Legenda simples (sempre presente com 2+ séries). Texto em tinta neutra, cor só na marca. */
 export function Legend({ items }: { items: { label: string; color: string }[] }) {
   return (
-    <ul className="flex flex-wrap gap-3 text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+    <ul className="flex flex-wrap gap-3 text-xs text-muted mb-1">
       {items.map((i) => (
         <li key={i.label} className="flex items-center gap-1.5">
           <span className="inline-block w-3 h-[3px] rounded-full" style={{ background: i.color }} />
@@ -239,7 +239,7 @@ export function HBarChart({ items, format = formatNumber, rowHeight = 28, onSele
 export function MiniTable({ head, rows }: { head: string[]; rows: (string | number)[][] }) {
   return (
     <table className="w-full text-sm">
-      <thead className="bg-zinc-200 dark:bg-zinc-800/80 text-left">
+      <thead className="bg-subtle text-left">
         <tr>
           {head.map((h) => (
             <th key={h} className="px-2 py-1 font-semibold">
@@ -250,7 +250,7 @@ export function MiniTable({ head, rows }: { head: string[]; rows: (string | numb
       </thead>
       <tbody>
         {rows.map((r, i) => (
-          <tr key={i} className="border-t border-zinc-300 dark:border-zinc-800">
+          <tr key={i} className="border-t border-line ">
             {r.map((c, j) => (
               <td key={j} className={j > 0 ? "px-2 py-1 tabular-nums" : "px-2 py-1"}>
                 {c}

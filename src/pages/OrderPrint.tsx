@@ -14,6 +14,7 @@ import { useSettings } from "@/lib/hooks"
 import { getPrintPrefs, setPrintPrefs, trackingUrl } from "@/lib/printPrefs"
 import { bridge } from "@/lib/runtime"
 import { ordersService } from "@/services/resources"
+import { WindowControls } from "@/components/Layout/WindowControls"
 
 type Layout = "A4" | "THERMAL"
 
@@ -145,19 +146,19 @@ export default function OrderPrint() {
 
   return (
     <div className="h-full flex flex-col print:block print:h-auto">
-      <div className="no-print shrink-0 flex flex-wrap items-end gap-2 p-2 border-b border-zinc-300 dark:border-zinc-800 shadow-md">
+      <div className="no-print app-drag shrink-0 flex flex-wrap items-end gap-2 p-2 pr-0 bg-surface border-b border-line">
         <Button size="sm" icon={ArrowLeft} onClick={() => navigate(-1)}>
           Voltar
         </Button>
-        <div role="group" aria-label="Layout" className="flex rounded-md border border-zinc-300 dark:border-zinc-800 overflow-hidden">
+        <div role="group" aria-label="Layout" className="flex rounded-md border border-line overflow-hidden">
           {(["A4", "THERMAL"] as Layout[]).map((l) => (
             <button
               key={l}
               onClick={() => changeLayout(l)}
               aria-pressed={layout === l}
               className={cn(
-                "px-2 py-1 text-sm transition duration-200 first:border-r border-zinc-300 dark:border-zinc-800",
-                layout === l ? "bg-zinc-200 dark:bg-zinc-800 font-semibold" : "hover:bg-zinc-200 dark:hover:bg-zinc-800/80",
+                "px-2 py-1 text-sm transition duration-200 first:border-r border-line ",
+                layout === l ? "bg-accent-soft text-accent font-medium" : "text-muted hover:bg-hover",
               )}
             >
               {l === "A4" ? "A4" : "Térmica 80 mm"}
@@ -197,9 +198,12 @@ export default function OrderPrint() {
           <Button size="sm" variant="primary" icon={Printer} onClick={handlePrint} loading={busy}>
             Imprimir
           </Button>
+          <div className="h-9 -my-2 flex">
+            <WindowControls />
+          </div>
         </div>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto bg-zinc-300 dark:bg-zinc-800 p-4 print:p-0 print:bg-white print:overflow-visible">
+      <div className="flex-1 min-h-0 overflow-auto bg-subtle p-4 print:p-0 print:bg-white print:overflow-visible">
         <div className="flex flex-col gap-4 print:gap-0">
           {layout === "THERMAL" ? (
             <ThermalDocument {...docProps} />

@@ -15,12 +15,13 @@ export default function Input ({ IType,icon : Icon,input_placeholder, input_name
   const error = errors[input_name]?.message as string | undefined
 
   return (
-    <div className="flex flex-col gap-0.5 mx-2">
+    <div className="flex flex-col gap-1 mx-4">
       <div className={cn(
-        "h-10 flex items-center gap-1 border dark:border-zinc-800 border-zinc-300 rounded-md shadow-sm focus-within:border-zinc-500 transition duration-200",
-        error && "border-red-500 dark:border-red-500/70",
+        "h-10 flex items-center gap-2 bg-surface border border-line rounded-lg shadow-sm hover:border-line-strong",
+        "focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent/15 transition-[border-color,box-shadow] duration-150",
+        error && "border-danger/70",
       )}>
-        {Icon && <Icon className="ml-2 shrink-0 text-zinc-500" size={20}/>}
+        {Icon && <Icon className="ml-3 shrink-0 text-faint" size={16}/>}
         <label htmlFor={input_name} className="sr-only">{input_placeholder}</label>
         <input
           placeholder={input_placeholder}
@@ -29,11 +30,11 @@ export default function Input ({ IType,icon : Icon,input_placeholder, input_name
           list={list}
           inputMode={inputMode}
           aria-invalid={!!error}
-          className="bg-transparent w-full h-full px-1 focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+          className="bg-transparent w-full h-full pr-3 text-sm focus:outline-none placeholder:text-faint"
           type={IType}
         />
       </div>
-      {error && <span role="alert" className="text-xs text-red-500">{error}</span>}
+      {error && <span role="alert" className="text-xs text-danger">{error}</span>}
     </div>
   )
 }

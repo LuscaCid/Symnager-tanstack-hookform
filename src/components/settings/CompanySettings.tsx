@@ -135,7 +135,7 @@ export function CompanySettings() {
     <Panel title="Dados da empresa" icon={Building2}>
       <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
         {!isAdmin && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Somente administradores podem alterar estes dados.</p>
+          <p className="text-sm text-muted ">Somente administradores podem alterar estes dados.</p>
         )}
         <fieldset disabled={!isAdmin} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <TextField label="Nome / razão social" wrapperClassName="sm:col-span-2" error={errors.name?.message} {...register("name")} />
@@ -151,13 +151,13 @@ export function CompanySettings() {
         </fieldset>
 
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Logo (aparece no comprovante impresso)</span>
+          <span className="text-xs font-semibold text-muted ">Logo (aparece no comprovante impresso)</span>
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="w-40 h-20 flex items-center justify-center rounded-md border border-dashed border-zinc-300 dark:border-zinc-800 bg-white overflow-hidden">
+            <div className="w-40 h-20 flex items-center justify-center rounded-md border border-dashed border-line bg-white overflow-hidden">
               {logo ? (
                 <img src={logo} alt="Logo da empresa" className="max-w-full max-h-full object-contain" />
               ) : (
-                <span className="text-xs text-zinc-400">sem logo</span>
+                <span className="text-xs text-faint">sem logo</span>
               )}
             </div>
             {isAdmin && (
@@ -174,7 +174,7 @@ export function CompanySettings() {
               </div>
             )}
           </div>
-          <span className="text-xs text-zinc-500">PNG ou JPG; reduzida automaticamente para até 400 px de largura (máx. 300 KB).</span>
+          <span className="text-xs text-faint">PNG ou JPG; reduzida automaticamente para até 400 px de largura (máx. 300 KB).</span>
         </div>
 
         {isAdmin && (
