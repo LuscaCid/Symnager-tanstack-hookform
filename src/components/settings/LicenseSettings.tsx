@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { KeyRound, MonitorX, RefreshCw } from "lucide-react"
 import { ReactNode, useState } from "react"
+import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import type { LicenseStatus } from "@/@types/api"
 import { BoneLines, Button, ConfirmDialog, Panel } from "@/components/ui"
@@ -8,7 +9,9 @@ import { useAuth, useHasRole } from "@/contexts/Auth-context"
 import { cn } from "@/lib/cn"
 import { formatDate, formatDateTime } from "@/lib/format"
 import { LICENSE_STATUS_LABEL } from "@/lib/license"
-import { getErrorMessage } from "@/service/api"
+import { planName } from "@/lib/plans"
+import { bridge, isDesktop } from "@/lib/runtime"
+import { toastError } from "@/lib/notify"
 import { licenseService } from "@/services/resources"
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -42,6 +45,9 @@ export function LicenseSettings() {
   const [busy, setBusy] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const { data: license, isLoading } = useQuery({ queryKey: ["license"], queryFn: licenseService.status })
+  // desativar exige a sessão da API local: no modo nuvem o usuário está logado só na nuvem
+  const runtime = useQuery({ queryKey: ["runtime"], queryFn: () => bridge!.getRuntime(), enabled: isDesktop })
+  const cloud = runtime.data?.mode === "remote"
 
   function update(status: LicenseStatus) {
     queryClient.setQueryData(["license"], status)
@@ -55,7 +61,7 @@ export function LicenseSettings() {
       update(status)
       if (status.valid) toast.success("Licença verificada.")
     } catch (err) {
-      toast.error(getErrorMessage(err))
+      toastError(err)
     } finally {
       setBusy(false)
     }
@@ -67,7 +73,7 @@ export function LicenseSettings() {
       setConfirm(false)
       update(status)
     } catch (err) {
-      toast.error(getErrorMessage(err))
+      toastError(err)
     }
   }
 
@@ -82,7 +88,14 @@ export function LicenseSettings() {
             <Row label="Situação">
               <StatusLine license={license} />
             </Row>
-            <Row label="Plano">{license.plan ?? "—"}</Row>
+            <Row label="Plano">
+              {license.plan_name || planName(license.plan) || "—"}
+              {license.valid && (
+                <Link to="/configuracoes/plano" className="ml-2 text-[13px] text-accent hover:underline">
+                  ver limites e mudar de plano
+                </Link>
+              )}
+            </Row>
             <Row label="Validade">
               {license.license_expires_at ? `até ${formatDate(license.license_expires_at)}` : license.valid ? "vitalícia" : "—"}
             </Row>
@@ -99,7 +112,7 @@ export function LicenseSettings() {
             </p>
           )}
           <div className="flex flex-wrap gap-2 justify-end border-t border-line pt-4">
-            {isAdmin && license.valid && (
+            {isAdmin && license.valid && !cloud && (
               <Button icon={MonitorX} variant="ghost" onClick={() => setConfirm(true)}>
                 Desativar neste computador
               </Button>

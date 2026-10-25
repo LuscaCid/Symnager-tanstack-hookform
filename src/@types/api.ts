@@ -362,6 +362,17 @@ export type LicenseState =
   | 'LICENSE_NOT_FOUND' | 'TENANT_PENDING' | 'TENANT_BLOCKED' | 'LICENSE_BLOCKED' | 'LICENSE_EXPIRED'
   | 'ACTIVATION_REVOKED' | 'ACTIVATION_LIMIT' | 'LICENSE_SERVER_UNREACHABLE'
 
+/** Limites do plano contratado (null = ilimitado). */
+export interface PlanLimits {
+  cloud: boolean
+  max_users: number | null
+  max_orders_month: number | null
+  storage_mb: number | null
+  max_photos_per_order: number | null
+  max_machines: number | null
+  rate_per_minute: number | null
+}
+
 export interface LicenseStatus {
   valid: boolean
   status: LicenseState | string
@@ -369,6 +380,8 @@ export interface LicenseStatus {
   key_masked: string | null
   tenant: { id: number; name: string; document: string | null } | null
   plan: string | null
+  plan_name?: string | null
+  limits?: PlanLimits | null
   license_expires_at: string | null
   offline_until: string | null
   activated_at: string | null
@@ -387,12 +400,42 @@ export interface LicenseRequiredError {
 
 /** Pedido de licença (POST /license/request; a API repassa ao servidor de licenças). */
 export interface LicenseRequestInput {
+  plan?: string
   company_name: string
   contact_name: string
   document?: string
   email: string
   phone: string
   message?: string
+}
+
+/** Pedido de troca de plano (POST /license/plan-request). */
+export interface PlanChangeRequest {
+  id: number
+  status: string
+  from_plan: string | null
+  to_plan: string
+  created_at: string
+}
+
+/** GET /cloud/usage (servidor em nuvem). */
+export interface CloudUsage {
+  plan: string
+  plan_name: string
+  limits: PlanLimits
+  usage: { users: number; orders_month: number; storage_bytes: number }
+}
+
+/** Foto anexada à OS. */
+export interface OrderPhoto {
+  id: number
+  order_id: number
+  original_name: string
+  mime: string
+  size: number
+  caption: string | null
+  created_at: string
+  user: { id: number; name: string } | null
 }
 
 export interface AuditLog {

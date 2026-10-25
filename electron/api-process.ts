@@ -4,12 +4,17 @@ import { EventEmitter } from "node:events"
 import fs from "node:fs"
 import net from "node:net"
 import path from "node:path"
+import { CLOUD_API_URL, CLOUD_URL } from "./cloud-url"
 import { dbPath, getJwtSecret, loadConfig, logsDir } from "./config"
 
 export type ApiStatus = "starting" | "running" | "error" | "stopped" | "remote"
 
 export interface Runtime {
   apiUrl: string
+  /** API embutida neste computador (licença, importação da nuvem); vazia enquanto não sobe */
+  localApiUrl: string
+  /** endereço do servidor em nuvem Symnager */
+  cloudUrl: string
   mode: "local" | "remote"
   apiStatus: ApiStatus
   apiError?: string
@@ -59,11 +64,6 @@ function portInUse(port: number, host: string): Promise<boolean> {
   })
 }
 
-export function normalizeApiUrl(url: string) {
-  const trimmed = url.trim().replace(/\/+$/, "")
-  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`
-}
-
 class ApiProcess extends EventEmitter {
   private child: UtilityProcess | null = null
   private status: ApiStatus = "stopped"
@@ -78,9 +78,12 @@ class ApiProcess extends EventEmitter {
   runtime(): Runtime {
     const config = loadConfig()
     return {
-      apiUrl: config.mode === "remote" ? normalizeApiUrl(config.remoteUrl || "http://localhost") : this.url,
+      apiUrl: config.mode === "remote" ? CLOUD_API_URL : this.url,
+      localApiUrl: this.status === "running" ? this.url : "",
+      cloudUrl: CLOUD_URL,
       mode: config.mode,
-      apiStatus: config.mode === "remote" ? "remote" : this.status,
+      // na nuvem o renderer só precisa da API local para a licença: "remote" quando ela está de pé
+      apiStatus: config.mode === "remote" && this.status === "running" ? "remote" : this.status,
       apiError: this.error,
       version: app.getVersion(),
       userData: app.getPath("userData"),
@@ -115,13 +118,8 @@ class ApiProcess extends EventEmitter {
   }
 
   async start() {
+    // a API local sobe também no modo nuvem: ela guarda a licença e recebe a cópia dos dados da nuvem
     const config = loadConfig()
-    if (config.mode === "remote") {
-      await this.stop()
-      // runtime() já reporta "remote" quando o modo é remoto
-      this.setStatus("stopped")
-      return
-    }
     if (this.child) return
     this.stopping = false
     this.setStatus("starting")

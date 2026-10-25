@@ -1,4 +1,4 @@
-import { Building2, ClipboardList, Database, Info, KeyRound, Palette, Printer, Server, Settings as SettingsIcon, User } from "lucide-react"
+import { Building2, ClipboardList, Database, Gauge, Info, KeyRound, Palette, Printer, Server, Settings as SettingsIcon, User } from "lucide-react"
 import { Navigate, useNavigate, useParams } from "react-router-dom"
 import { Page, PageBody, PageHeader, Panel, Tabs, TabItem } from "@/components/ui"
 import { useHasRole } from "@/contexts/Auth-context"
@@ -12,8 +12,9 @@ import { BackupSettings } from "@/components/settings/BackupSettings"
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings"
 import { AboutSettings } from "@/components/settings/AboutSettings"
 import { LicenseSettings } from "@/components/settings/LicenseSettings"
+import { PlanSettings } from "@/components/settings/PlanSettings"
 
-type TabKey = "perfil" | "empresa" | "ordens" | "impressao" | "conexao" | "backup" | "aparencia" | "licenca" | "sobre"
+type TabKey = "perfil" | "empresa" | "ordens" | "impressao" | "conexao" | "backup" | "aparencia" | "plano" | "licenca" | "sobre"
 
 function ConnectionTab() {
   return (
@@ -21,7 +22,7 @@ function ConnectionTab() {
       <div className="flex flex-col gap-3">
         <p className="text-sm text-muted ">
           {isDesktop
-            ? "No modo local, o Symnager roda o servidor e o banco SQLite dentro deste computador — ideal para um único balcão e funciona sem internet. Use um servidor externo para compartilhar os mesmos dados entre vários computadores ou acessar pela web."
+            ? "No modo local, o Symnager roda o servidor e o banco SQLite dentro deste computador — ideal para um único balcão e funciona sem internet. Nos planos mensais, o servidor em nuvem Symnager compartilha os mesmos dados entre os computadores da empresa."
             : "Por padrão a versão web usa a API do mesmo endereço deste site. Informe outro endereço apenas se a API estiver hospedada separadamente."}
         </p>
         <ConnectionSettings />
@@ -43,6 +44,7 @@ export default function Settings() {
     { key: "conexao", label: "Conexão", icon: Server },
     { key: "backup", label: "Backup", icon: Database, hidden: !isAdmin },
     { key: "aparencia", label: "Aparência", icon: Palette },
+    { key: "plano", label: "Plano", icon: Gauge },
     { key: "licenca", label: "Licença", icon: KeyRound },
     { key: "sobre", label: "Sobre", icon: Info },
   ]
@@ -53,7 +55,7 @@ export default function Settings() {
 
   return (
     <Page>
-      <PageHeader icon={SettingsIcon} title="Configurações" subtitle="Perfil, empresa, impressão, conexão, backup e licença" />
+      <PageHeader icon={SettingsIcon} title="Configurações" subtitle="Perfil, empresa, impressão, conexão, backup, plano e licença" />
       <Tabs tabs={tabs} value={current} onChange={(key) => navigate(`/configuracoes/${key}`)} />
       <PageBody>
         <div className="max-w-3xl mx-auto w-full">
@@ -64,6 +66,7 @@ export default function Settings() {
           {current === "conexao" && <ConnectionTab />}
           {current === "backup" && <BackupSettings />}
           {current === "aparencia" && <AppearanceSettings />}
+          {current === "plano" && <PlanSettings />}
           {current === "licenca" && <LicenseSettings />}
           {current === "sobre" && <AboutSettings />}
         </div>

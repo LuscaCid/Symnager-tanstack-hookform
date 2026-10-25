@@ -40,7 +40,7 @@ export function AboutSettings() {
             <Row label="Aplicativo">{isDesktop ? `Desktop ${runtime.data?.version ?? ""}` : "Web"}</Row>
             {runtime.data && (
               <>
-                <Row label="Modo">{runtime.data.mode === "local" ? "Servidor local (SQLite)" : "Servidor externo"}</Row>
+                <Row label="Modo">{runtime.data.mode === "local" ? "Banco neste computador (SQLite)" : "Servidor em nuvem Symnager"}</Row>
                 <Row label="Plataforma">{runtime.data.platform}</Row>
                 {runtime.data.mode === "local" && (
                   <Row label="Banco de dados">

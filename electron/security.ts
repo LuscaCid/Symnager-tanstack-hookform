@@ -1,19 +1,11 @@
-import { loadConfig } from "./config"
+import { CLOUD_ORIGIN } from "./cloud-url"
 
 export const APP_ORIGIN = "app://symnager"
 export const DEV_URL = process.env.VITE_DEV_SERVER_URL || ""
 
 /** Origens que a página pode chamar via fetch/XHR. */
 function connectSources() {
-  const config = loadConfig()
-  const sources = ["'self'", "http://127.0.0.1:*", "http://localhost:*", "https://viacep.com.br"]
-  if (config.mode === "remote" && config.remoteUrl) {
-    try {
-      sources.push(new URL(config.remoteUrl).origin)
-    } catch {
-      // URL inválida já é bloqueada pela validação da config
-    }
-  }
+  const sources = ["'self'", "http://127.0.0.1:*", "http://localhost:*", "https://viacep.com.br", CLOUD_ORIGIN]
   if (DEV_URL) sources.push("ws://localhost:*", "ws://127.0.0.1:*")
   return sources.join(" ")
 }

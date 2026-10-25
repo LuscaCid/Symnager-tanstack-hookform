@@ -1,12 +1,12 @@
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { Toaster, toast } from "sonner"
+import { Toaster } from "sonner"
 import { useContextSelector } from "use-context-selector"
 
 import { SidebarContextProvider } from "./contexts/Sidebar-context"
 import { ThemeContext, ThemeProvider } from "./contexts/Theme-context"
 import { AuthProvider } from "./contexts/Auth-context"
 import AllRoutes from "./routes/index.routes"
-import { getErrorMessage } from "./service/api"
+import { toastError } from "./lib/notify"
 import { TooltipProvider } from "./components/ui/Tooltip"
 
 const queryClient = new QueryClient({
@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: (error, _vars, _ctx, mutation) => {
       if (mutation.options.onError) return
-      toast.error(getErrorMessage(error))
+      toastError(error)
     },
   }),
 })

@@ -11,6 +11,7 @@ import { Button, ConfirmDialog, SelectField, TextAreaField } from "@/components/
 import InputSection from "./UsersRegister/InputSection"
 import { clientsService } from "@/services/resources"
 import { getErrorMessage } from "@/service/api"
+import { toastError } from "@/lib/notify"
 import { formatDocument, formatPhone, formatZipcode, onlyDigits } from "@/lib/format"
 import { optionalDocument, optionalEmail, phoneSchema } from "@/lib/validation"
 
@@ -177,7 +178,7 @@ export function ClientForm({ client, initialName, submitLabel = "Registrar", onS
         setConflict({ message: getErrorMessage(err), input })
         return
       }
-      toast.error(getErrorMessage(err))
+      toastError(err)
     }
   }
 

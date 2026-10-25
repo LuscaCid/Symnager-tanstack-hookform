@@ -18,14 +18,40 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-const REFRESH_KEY = "refresh_token"
+/**
+ * API embutida neste computador. No modo nuvem o `api` aponta para o servidor da Symnager,
+ * mas a licença continua sendo da instalação local (rotas públicas, sem token).
+ */
+export const localApi = axios.create({
+  baseURL: "/api",
+  timeout: 30000,
+  headers: { "Content-Type": "application/json", "X-Requested-With": "symnager" },
+})
+
+export function setLocalApiBaseUrl(url: string) {
+  localApi.defaults.baseURL = url
+}
+
+/** Recusas do servidor em nuvem ligadas à licença (403). */
+export type CloudDenial = { code: string; message: string }
+const CLOUD_DENIAL_CODES = new Set(["PLAN_NO_CLOUD", "CLOUD_LICENSE_INVALID"])
+let onCloudDenied: ((info: CloudDenial) => void) | null = null
+
+/** Chamado quando a nuvem recusa a licença deste computador (plano sem nuvem, licença inválida). */
+export function setCloudDeniedHandler(fn: (info: CloudDenial) => void) {
+  onCloudDenied = fn
+}
+
+// sessões separadas para a API local e para a nuvem: trocar de modo não derruba a outra
+let refreshKey: "refresh_token" | "refresh_token_cloud" = "refresh_token"
 let accessToken: string | null = null
 let refreshing: Promise<AuthResponse | null> | null = null
 let onSessionExpired: (() => void) | null = null
 let onLicenseRequired: ((info: LicenseRequiredError) => void) | null = null
 
-export function setApiBaseUrl(url: string) {
+export function setApiBaseUrl(url: string, cloud = false) {
   api.defaults.baseURL = url
+  refreshKey = cloud ? "refresh_token_cloud" : "refresh_token"
 }
 
 export function setAccessToken(token: string | null) {
@@ -46,11 +72,11 @@ export function setLicenseRequiredHandler(fn: (info: LicenseRequiredError) => vo
 }
 
 export async function storeRefreshToken(token: string | null) {
-  if (bridge) await bridge.secureSet(REFRESH_KEY, token)
+  if (bridge) await bridge.secureSet(refreshKey, token)
 }
 
-async function readRefreshToken() {
-  if (bridge) return bridge.secureGet(REFRESH_KEY)
+export async function readRefreshToken() {
+  if (bridge) return bridge.secureGet(refreshKey)
   return null
 }
 
@@ -85,7 +111,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean }
+type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean; _licenseRetried?: boolean }
 
 api.interceptors.response.use(
   (response) => response,
@@ -96,6 +122,18 @@ api.interceptors.response.use(
     const body = error.response?.data as Partial<LicenseRequiredError> | undefined
     if (error.response?.status === 402 && body?.code === "LICENSE_REQUIRED") {
       onLicenseRequired?.(body as LicenseRequiredError)
+      return Promise.reject(error)
+    }
+    const code = (body as { code?: string } | undefined)?.code
+    if (error.response?.status === 403 && code === "CLOUD_LICENSE_STALE" && original && !original._licenseRetried && bridge) {
+      // token da licença passou de 24 h: check-in agora e repete (o Electron injeta o token novo)
+      original._licenseRetried = true
+      await localApi.post("/license/refresh").catch(() => undefined)
+      await bridge.cloudCheck().catch(() => undefined)
+      return api(original)
+    }
+    if (error.response?.status === 403 && code && CLOUD_DENIAL_CODES.has(code)) {
+      onCloudDenied?.({ code, message: (body as { message?: string }).message ?? "Acesso à nuvem recusado." })
       return Promise.reject(error)
     }
     if (error.response?.status === 401 && original && !original._retried && !isAuthRoute) {

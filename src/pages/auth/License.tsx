@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ArrowLeft, CheckCircle2, KeyRound, RefreshCw, Send, Server, ShieldAlert } from "lucide-react"
+import { ArrowLeft, Check, CheckCircle2, KeyRound, RefreshCw, Send, Server, ShieldAlert } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { Link } from "react-router-dom"
@@ -8,16 +8,12 @@ import { Button, TextAreaField, TextField } from "@/components/ui"
 import { useAuth } from "@/contexts/Auth-context"
 import { cn } from "@/lib/cn"
 import { formatLicenseKey, LICENSE_KEY_PATTERN, LICENSE_STATUS_LABEL } from "@/lib/license"
+import { describeLimits, PLANS } from "@/lib/plans"
 import { getErrorMessage } from "@/service/api"
 import { licenseService } from "@/services/resources"
 import { AuthShell } from "./AuthShell"
 
 type View = "activate" | "request" | "sent"
-
-const PLANS = [
-  { key: "Vitalício", price: "R$ 74,90", detail: "pagamento único · banco neste computador" },
-  { key: "Mensal", price: "R$ 24,90/mês", detail: "banco em nuvem · dados compartilhados" },
-] as const
 
 /** Primeira tela quando a instalação não tem licença válida: ativar com a chave ou pedir uma. */
 export default function LicenseScreen() {
@@ -125,7 +121,7 @@ function ActivateView({ onRequest }: { onRequest: () => void }) {
 }
 
 const requestSchema = z.object({
-  plan: z.enum(["Vitalício", "Mensal"]),
+  plan: z.enum(["VITALICIO", "BASICO", "INTERMEDIARIO", "PRO"]),
   company_name: z.string().trim().min(2, "Informe o nome da empresa"),
   contact_name: z.string().trim().min(2, "Informe o seu nome"),
   document: z.string().trim().optional(),
@@ -143,17 +139,20 @@ function RequestView({ onBack, onSent }: { onBack: () => void; onSent: () => voi
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<RequestForm>({ resolver: zodResolver(requestSchema), defaultValues: { plan: "Vitalício" } })
+  } = useForm<RequestForm>({ resolver: zodResolver(requestSchema), defaultValues: { plan: "BASICO" } })
   const plan = watch("plan")
+  const selected = PLANS.find((p) => p.key === plan) ?? PLANS[0]
 
   async function onSubmit(data: RequestForm) {
     setError(null)
     try {
       const { plan: chosen, message, document, ...rest } = data
+      const name = PLANS.find((p) => p.key === chosen)?.name ?? chosen
       await licenseService.request({
         ...rest,
+        plan: chosen,
         ...(document ? { document: document.replace(/\D/g, "") } : {}),
-        message: [`Plano: ${chosen}`, message].filter(Boolean).join("\n"),
+        message: [`Plano: ${name}`, message].filter(Boolean).join("\n"),
       })
       onSent()
     } catch (err) {
@@ -177,12 +176,22 @@ function RequestView({ onBack, onSent }: { onBack: () => void; onSent: () => voi
                 plan === p.key ? "border-accent bg-accent-soft" : "border-line hover:border-line-strong",
               )}
             >
-              <span className="block text-[13px] text-muted">{p.key}</span>
-              <span className="block text-base font-semibold">{p.price}</span>
-              <span className="block text-xs text-faint mt-0.5">{p.detail}</span>
+              <span className="block text-[13px] text-muted">{p.name}</span>
+              <span className="block text-base font-semibold">
+                {p.price} <span className="text-xs font-normal text-faint">{p.period}</span>
+              </span>
+              <span className="block text-xs text-faint mt-0.5">{p.audience}</span>
             </button>
           ))}
         </div>
+        <ul aria-label={`Recursos do plano ${selected.name}`} className="grid grid-cols-2 gap-x-3 gap-y-1 text-[13px] text-muted">
+          {describeLimits(selected.limits).map((line) => (
+            <li key={line} className="flex items-start gap-1.5">
+              <Check size={14} className="text-accent shrink-0 mt-0.5" />
+              {line}
+            </li>
+          ))}
+        </ul>
         <TextField label="Empresa" autoFocus error={errors.company_name?.message} {...register("company_name")} />
         <TextField label="Seu nome" error={errors.contact_name?.message} {...register("contact_name")} />
         <div className="grid grid-cols-2 gap-3">

@@ -19,7 +19,12 @@ Contrato HTTP: **`docs/API_CONTRACT.md`** — fonte da verdade. Mudou rota/campo
 1. **Desktop local (padrão)** — Electron inicia a API como `utilityProcess` (Node embutido) em `127.0.0.1:<porta livre>`,
    banco em `<userData>/symnager.db`, `JWT_SECRET` gerado na 1ª execução em `<userData>/secrets.json`.
    A janela carrega o build do Vite pelo protocolo `app://symnager/` (SPA fallback para `index.html`).
-2. **Desktop remoto** — mesma janela, a API local não sobe; o renderer fala com `remoteUrl` (Configurações > Conexão).
+2. **Desktop nuvem** (`mode: "remote"`, planos mensais) — o renderer fala com o servidor em nuvem Symnager, endereço fixo
+   (`electron/cloud-url.ts`, env `SYMNAGER_CLOUD_URL` em dev). A API local **continua subindo**: ela guarda a licença
+   (`licenseService` usa sempre `localApi` → `runtime.localApiUrl`) e recebe a cópia dos dados da nuvem (`POST /sync/import`).
+   O processo principal injeta `X-Symnager-License` nas requisições para a nuvem (`electron/cloud.ts`); o renderer nunca vê o token.
+   Antes de trocar de modo, `bridge.cloudCheck()`; plano sem nuvem (403 `PLAN_NO_CLOUD`) → toast e continua local.
+   Refresh token separado por modo (`refresh_token` / `refresh_token_cloud`).
 3. **Web (Docker)** — `nginx` serve o build e faz proxy de `/api` para o container da API (mesma origem → cookie HttpOnly do refresh funciona).
 4. **Dev** — `npm run dev` (Vite :5173 com proxy `/api` → `127.0.0.1:3333`) + `npm run start:dev` na API; ou `npm run electron:dev`.
 
@@ -32,6 +37,9 @@ src/
   service/api.ts          axios único: baseURL em runtime, access token em memória, refresh automático em 401, getErrorMessage()
   services/resources.ts   TODAS as chamadas HTTP por recurso (ordersService, clientsService, ...). Página nunca chama axios direto.
   lib/runtime.ts          bridge/isDesktop, resolveApiBaseUrl()
+  lib/plans.ts            catálogo de planos (Vitalício, Básico, Intermediário, Pro), describeLimits(), planName()
+  lib/notify.ts           toastError(err): erro padrão; 403 PLAN_LIMIT ganha a ação "Ver planos" (/configuracoes/plano)
+  lib/image.ts            compressImage(): fotos da OS reduzidas para 1600 px JPEG antes do upload
   lib/format.ts           moeda, datas pt-BR, CPF/CNPJ/telefone, rótulos e cores de status/prioridade/categorias
   lib/hooks.ts            useDebounce, useHotkey, useLookups(kind), useSettings(), useTechnicians()
   lib/validation.ts       zod: senha, usuário, e-mail opcional, documento, telefone
@@ -46,7 +54,7 @@ Regras:
 - Query keys: `["orders", params]`, `["order", id]`, `["clients", ...]`, `["client", id]`, `["dashboard", range]`, `["failures", ...]`,
   `["lookups", kind]`, `["settings"]`, `["products", ...]`, `["services", ...]`, `["suppliers", ...]`, `["users", ...]`.
   Após mutation invalide as listas afetadas (`history`, `orders`, `dashboard`, `order`).
-- Erros de mutation sem `onError` próprio já viram `toast.error(getErrorMessage(err))` (MutationCache no `App.tsx`).
+- Erros de mutation sem `onError` próprio já viram `toastError(err)` (MutationCache no `App.tsx`). Em catch manual, use `toastError`.
 - Permissões na UI: `useHasRole('TECNICO')` (ADMIN sempre passa). A API é quem garante; a UI só esconde.
 - Rota nova: arquivo em `pages/`, `lazy()` + `<Route>` em `routes/app.routes.tsx`, item em `components/Layout/navigation.ts`.
 - Páginas: `<Page>` + `<PageHeader>` + `<PageBody>` (ou `SplitPane`). Nunca `absolute inset-*` para layout.
@@ -59,7 +67,8 @@ Regras:
 - `main.ts` — janela segura (`contextIsolation`, `sandbox`, `nodeIntegration:false`, CSP, bloqueio de navegação/janelas externas,
   permissões negadas), protocolo `app://`, ciclo de vida da API (`api-process.ts`), IPC (`ipc.ts`), backup automático (`backup.ts`).
 - `preload.ts` — expõe apenas `window.symnager` (ver `src/@types/bridge.d.ts`). Nada de `ipcRenderer` cru no renderer.
-- Config do usuário: `<userData>/config.json` (`mode`, `remoteUrl`, `localPort`, `lanAccess`, `autoBackup`).
+- `cloud.ts` / `cloud-url.ts` — URL da nuvem, injeção do header da licença, IPCs `cloud:check` e `cloud:pull`.
+- Config do usuário: `<userData>/config.json` (`mode`, `localPort`, `lanAccess`, `autoBackup`; `remoteUrl` é legado e ignorado).
 - Segredos: `<userData>/secrets.json` (JWT) e refresh token criptografado com `safeStorage`.
 - Build: `npm run build:api` (compila a API irmã e copia `dist/`, `prisma/migrations`, `package.json` e `node_modules` de produção
   para `build/api/`), `npm run electron:build` (Vite + tsc do electron + electron-builder; `build/api` vai em `extraResources`).

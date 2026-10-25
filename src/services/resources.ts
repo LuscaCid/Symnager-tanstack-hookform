@@ -1,7 +1,10 @@
-import { api } from "@/service/api"
+import { api, localApi } from "@/service/api"
 import type {
+  CloudUsage,
   LicenseRequestInput,
   LicenseStatus,
+  OrderPhoto,
+  PlanChangeRequest,
   AuditLog,
   AuthResponse,
   Client,
@@ -53,15 +56,28 @@ export const healthService = {
   check: () => api.get<Health>("/health", { timeout: 5000 }).then((r) => r.data),
 }
 
+/** Licença desta instalação: sempre na API local (também no modo nuvem). */
 export const licenseService = {
-  status: () => api.get<LicenseStatus>("/license").then((r) => r.data),
-  activate: (key: string) => api.post<LicenseStatus>("/license/activate", { key }).then((r) => r.data),
-  refresh: () => api.post<LicenseStatus>("/license/refresh").then((r) => r.data),
-  /** ADMIN: libera a ativação deste computador */
+  status: () => localApi.get<LicenseStatus>("/license").then((r) => r.data),
+  activate: (key: string) => localApi.post<LicenseStatus>("/license/activate", { key }).then((r) => r.data),
+  refresh: () => localApi.post<LicenseStatus>("/license/refresh").then((r) => r.data),
+  /** ADMIN, só no modo local (exige a sessão da API local): libera a ativação deste computador */
   deactivate: () => api.delete<LicenseStatus>("/license").then((r) => r.data),
   /** pedido de licença: a API local repassa ao servidor de licenças (preenche o nome da máquina) */
   request: (data: LicenseRequestInput) =>
-    api.post<{ id: number; status: "PENDING" }>("/license/request", data).then((r) => r.data),
+    localApi.post<{ id: number; status: "PENDING" }>("/license/request", data).then((r) => r.data),
+  /** pedido de troca de plano (a API local repassa ao servidor de licenças) */
+  requestPlanChange: (data: { plan: string; message?: string; contact?: string }) =>
+    localApi.post<PlanChangeRequest>("/license/plan-request", data).then((r) => r.data),
+  pendingPlanChange: () =>
+    localApi
+      .get<{ pending: Pick<PlanChangeRequest, "id" | "to_plan" | "created_at"> | null }>("/license/plan-request")
+      .then((r) => r.data),
+}
+
+/** Servidor em nuvem: plano, limites e consumo do tenant. */
+export const cloudService = {
+  usage: () => api.get<CloudUsage>("/cloud/usage").then((r) => r.data),
 }
 
 export const authService = {
@@ -111,6 +127,19 @@ export const ordersService = {
     id: number,
     data: { category: FailureCategory; reason: string; description?: string; occurred_at?: string },
   ) => api.post<DeliveryFailure>(`/orders/${id}/failures`, data).then((r) => r.data),
+  photos: (id: number) => api.get<OrderPhoto[]>(`/orders/${id}/photos`).then((r) => r.data),
+  uploadPhoto: (id: number, file: Blob, filename: string, caption?: string) => {
+    const form = new FormData()
+    form.append("file", file, filename)
+    if (caption) form.append("caption", caption)
+    return api
+      .post<OrderPhoto>(`/orders/${id}/photos`, form, { headers: { "Content-Type": "multipart/form-data" }, timeout: 120_000 })
+      .then((r) => r.data)
+  },
+  /** binário da foto (precisa do Bearer, por isso não dá para usar a URL direto no <img>) */
+  photoBlob: (id: number, photoId: number) =>
+    api.get<Blob>(`/orders/${id}/photos/${photoId}/file`, { responseType: "blob" }).then((r) => r.data),
+  deletePhoto: (id: number, photoId: number) => api.delete(`/orders/${id}/photos/${photoId}`),
 }
 
 export const failuresService = {

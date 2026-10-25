@@ -20,7 +20,7 @@ export default function OfflineScreen() {
             <br />
             <span className="text-muted ">
               {isDesktop
-                ? "Se estiver usando um servidor externo, verifique o endereço e a rede. No modo local, reinicie o servidor embutido."
+                ? "No modo nuvem, verifique a internet deste computador. No modo local, reinicie o servidor embutido."
                 : "Verifique se a API está em execução e se o endereço está correto."}
             </span>
           </p>

@@ -3,7 +3,9 @@
 export type ApiStatus = 'starting' | 'running' | 'error' | 'stopped' | 'remote'
 
 export interface DesktopConfig {
+  /** remote = servidor em nuvem Symnager (endereço fixo, planos mensais) */
   mode: 'local' | 'remote'
+  /** legado (versões com endereço manual); ignorado */
   remoteUrl: string
   localPort: number
   /** permite que outros computadores da rede acessem a API local (bind 0.0.0.0) */
@@ -13,6 +15,9 @@ export interface DesktopConfig {
 
 export interface DesktopRuntime {
   apiUrl: string
+  /** API embutida neste computador (licença, cópia dos dados da nuvem); vazia enquanto não sobe */
+  localApiUrl: string
+  cloudUrl: string
   mode: 'local' | 'remote'
   apiStatus: ApiStatus
   apiError?: string
@@ -20,6 +25,26 @@ export interface DesktopRuntime {
   userData: string
   dbPath: string
   platform: string
+}
+
+export interface CloudCheckResult {
+  ok: boolean
+  code?: string
+  message?: string
+  tenant?: { id: number; name: string }
+  plan?: string
+  plan_name?: string
+  limits?: import('./api').PlanLimits
+}
+
+export interface CloudPullResult {
+  ok: boolean
+  message?: string
+  code?: string
+  safety_copy?: string
+  orders?: number
+  clients?: number
+  photos?: number
 }
 
 export interface PrinterInfo {
@@ -61,7 +86,10 @@ export interface SymnagerBridge {
   getConfig(): Promise<DesktopConfig>
   setConfig(partial: Partial<DesktopConfig>): Promise<DesktopRuntime>
   restartApi(): Promise<DesktopRuntime>
-  testRemote(url: string): Promise<{ ok: boolean; message: string }>
+  /** confere se a licença deste computador dá acesso ao servidor em nuvem */
+  cloudCheck(): Promise<CloudCheckResult>
+  /** substitui o banco local pelos dados do tenant na nuvem (com cópia de segurança) */
+  cloudPull(accessToken: string): Promise<CloudPullResult>
   secureGet(key: string): Promise<string | null>
   secureSet(key: string, value: string | null): Promise<void>
   saveFile(opts: { defaultPath: string; data: ArrayBuffer; filters?: FileFilter[] }): Promise<string | null>

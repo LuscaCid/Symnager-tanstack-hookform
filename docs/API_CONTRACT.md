@@ -151,6 +151,18 @@ type OrderHistory = { history_id, order_id, type: 'CREATED'|'STATUS'|'COMMENT'|'
 | GET | `/orders/:id/failures` | lista de falhas da OS |
 | POST | `/orders/:id/failures` | ver abaixo |
 
+### Fotos da OS (`/api/orders/:id/photos`)
+
+`OrderPhoto { id, order_id, original_name, mime, size, caption, created_at, user: { id, name } | null }`
+
+- `GET /api/orders/:id/photos` → `OrderPhoto[]`
+- `POST /api/orders/:id/photos` multipart `file` (+ `caption?`) → `201 OrderPhoto`. JPEG/PNG/WebP até 5 MB; o app reduz para no
+  máx. 1600 px (JPEG 0,8) antes de enviar. Mesmo papel de editar a OS.
+- `GET /api/orders/:id/photos/:photoId/file` → binário (exige Bearer: o front busca como blob e usa `URL.createObjectURL`).
+- `DELETE /api/orders/:id/photos/:photoId` → `204`.
+- Limite por OS e armazenamento dependem do plano → `403 { code: "PLAN_LIMIT", limit, message }`.
+- Local: arquivos em `<pasta do banco>/photos/<order_id>/`. O backup `.db` não inclui as fotos.
+
 ## Falhas de entrega / retornos (`/api/failures`)
 
 ```ts
@@ -242,6 +254,53 @@ Chaves conhecidas:
 
 ## Auditoria (`/api/audit`) — ADMIN
 GET `/audit` paginado `{ audit_id, user?: {user_id,name}, action, entity, entity_id, ip, meta, created_at }`.
+
+## Licença, planos e nuvem
+
+### Licença da instalação (`/api/license`) — sempre na API local
+
+No modo nuvem o front continua chamando estas rotas na API local (`runtime.localApiUrl`, axios `localApi` sem token).
+
+- `GET /api/license` (público) → `LicenseStatus { valid, status, message, key_masked, tenant, plan, plan_name, limits, license_expires_at, offline_until, activated_at, last_check_at, machine_name, machine_id, server_url }`
+- `POST /api/license/activate { key }`, `POST /api/license/refresh` (públicos) → `LicenseStatus`
+- `DELETE /api/license` (ADMIN, sessão local) → `LicenseStatus`. A UI esconde no modo nuvem.
+- `POST /api/license/request { plan, company_name, contact_name, document?, email, phone, message? }` → `{ id, status: "PENDING" }`
+- `POST /api/license/plan-request { plan, message?, contact? }` → `{ id, status, from_plan, to_plan, created_at }` (troca de plano, Configurações > Plano)
+- `GET /api/license/plan-request` → `{ pending: { id, to_plan, created_at } | null }`
+- `GET /api/license/token` — só `x-internal-token` (processo principal do Electron) → `{ token: string | null }`
+- Sem licença válida, qualquer outra rota local → `402 { code: "LICENSE_REQUIRED", license_status, message }`.
+
+### Planos
+
+`limits = { cloud, max_users, max_orders_month, storage_mb, max_photos_per_order, max_machines, rate_per_minute }` (`null` = ilimitado).
+Catálogo no front: `src/lib/plans.ts` (mesmos valores do servidor de licenças).
+
+| plan | preço | nuvem | usuários | OS/mês | armazenamento | fotos/OS | computadores |
+|---|---|---|---|---|---|---|---|
+| VITALICIO (`PADRAO` antigo) | R$ 74,90 único | não | ilimitado (local) | ilimitado | disco do PC | 10 | 1 |
+| BASICO | R$ 18,90/mês | sim | 2 | 80 | 2 GB | 4 | 2 |
+| INTERMEDIARIO | R$ 34,90/mês | sim | 5 | 300 | 10 GB | 8 | 5 |
+| PRO | R$ 49,90/mês | sim | 12 | ilimitado | 30 GB | 15 | 12 |
+
+### Servidor em nuvem (`APP_MODE=cloud`, `https://symnager.plune.app.br/cloud/api`)
+
+- Toda rota (menos `GET /api/health`) exige `X-Symnager-License: <token do servidor de licenças>`. O processo principal do
+  Electron injeta o header (`session.webRequest`); o renderer nunca vê o token.
+  - `403 CLOUD_LICENSE_INVALID` (ausente/inválido), `403 PLAN_NO_CLOUD` (plano vitalício): o app avisa e volta para o banco local.
+  - `403 CLOUD_LICENSE_STALE` (token com mais de 24 h): o app faz check-in (`/license/refresh`) e repete a requisição uma vez.
+- Um banco por tenant (`payload.tenant.id`); o JWT leva `tid` e precisa bater com o tenant do header.
+- `GET /api/cloud/check` (só licença) → `{ ok, tenant: { id, name }, plan, plan_name, limits }`
+- `GET /api/cloud/usage` (JWT) → `{ plan, plan_name, limits, usage: { users, orders_month, storage_bytes } }`
+- `GET /api/sync/export` (JWT ADMIN) → `application/x-tar` com `database.db` + `photos/<order_id>/<arquivo>`.
+- Limites → `403 { code: "PLAN_LIMIT", limit: "users" | "orders_month" | "storage" | "photos_per_order", message }`
+  (o toast oferece "Ver planos" → `/configuracoes/plano`). Rate limit por tenant → `429`.
+
+### Cópia da nuvem para o banco local
+
+`POST /api/sync/import` (API local, só `x-internal-token`, multipart `file` = tar do export): guarda cópia de segurança do
+banco atual, troca banco e fotos, roda migrações, exige ≥1 ADMIN ativo e desfaz se algo falhar →
+`{ ok, safety_copy, orders, clients, photos }`. Fluxo: Configurações > Conexão (modo nuvem, ADMIN) →
+`bridge.cloudPull(accessToken)` → Electron baixa o export e entrega à API local.
 
 ## Variáveis de ambiente da API
 

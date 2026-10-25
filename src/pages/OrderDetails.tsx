@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Copy,
   History,
+  Images,
   MessageCircle,
   Printer,
   ShieldCheck,
@@ -39,6 +40,7 @@ import { OrderItemsTab } from "@/components/orders/OrderItemsTab"
 import { OrderPaymentsTab } from "@/components/orders/OrderPaymentsTab"
 import { OrderHistoryTab } from "@/components/orders/OrderHistoryTab"
 import { OrderFailuresTab } from "@/components/orders/OrderFailuresTab"
+import { OrderPhotosTab } from "@/components/orders/OrderPhotosTab"
 import { StatusMenu } from "@/components/orders/StatusMenu"
 import { useStatusChange } from "@/components/orders/useStatusChange"
 import { balanceOf, isFinal, isOverdue, openExternal, warrantyInfo, whatsappLink, whatsappMessage } from "@/components/orders/orderUtils"
@@ -48,7 +50,7 @@ import { formatDate, formatDateTime, formatDocument, formatMoney, formatOrderNum
 import { useSettings } from "@/lib/hooks"
 import { ordersService } from "@/services/resources"
 
-type TabKey = "itens" | "pagamentos" | "historico" | "falhas"
+type TabKey = "itens" | "pagamentos" | "fotos" | "historico" | "falhas"
 
 export default function OrderDetails() {
   const { id } = useParams()
@@ -225,6 +227,7 @@ export default function OrderDetails() {
                 tabs={[
                   { key: "itens", label: `Itens (${order.items?.length ?? 0})`, icon: Wrench },
                   { key: "pagamentos", label: "Pagamentos", icon: Wallet },
+                  { key: "fotos", label: "Fotos", icon: Images },
                   { key: "historico", label: "Histórico", icon: History },
                   { key: "falhas", label: `Falhas${order.failures?.length ? ` (${order.failures.length})` : ""}`, icon: AlertTriangle },
                 ]}
@@ -232,6 +235,7 @@ export default function OrderDetails() {
               <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
                 {tab === "itens" && <OrderItemsTab order={order} readOnly={readOnly} />}
                 {tab === "pagamentos" && <OrderPaymentsTab order={order} readOnly={readOnly} />}
+                {tab === "fotos" && <OrderPhotosTab order={order} readOnly={readOnly} />}
                 {tab === "historico" && <OrderHistoryTab order={order} />}
                 {tab === "falhas" && <OrderFailuresTab order={order} />}
               </div>

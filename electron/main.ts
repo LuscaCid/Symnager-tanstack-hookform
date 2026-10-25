@@ -4,6 +4,7 @@ import path from "node:path"
 import { pathToFileURL } from "node:url"
 import { apiProcess } from "./api-process"
 import { startBackupScheduler, stopBackupScheduler } from "./backup"
+import { installCloudHeaders } from "./cloud"
 import { registerIpc } from "./ipc"
 import { APP_ORIGIN, contentSecurityPolicy, DEV_URL, isSafeExternal, isTrustedUrl } from "./security"
 
@@ -168,6 +169,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     hardenSession()
+    installCloudHeaders()
     registerAppProtocol()
     registerIpc(() => mainWindow)
     buildMenu()

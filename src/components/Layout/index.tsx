@@ -1,5 +1,6 @@
-import { Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Suspense, useEffect } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { setNotifyNavigator } from "@/lib/notify";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar/Sidebar";
 
@@ -9,6 +10,13 @@ import { Sidebar } from "./Sidebar/Sidebar";
  * Nunca colocar Suspense ACIMA do Layout: carregar uma página nova substituiria header/sidebar (o "flick").
  */
 export function Layout() {
+  const navigate = useNavigate()
+  // toasts de limite do plano ("Ver planos") navegam por aqui
+  useEffect(() => {
+    setNotifyNavigator(navigate)
+    return () => setNotifyNavigator(null)
+  }, [navigate])
+
   return (
     <div className="h-full flex flex-col bg-app print:bg-white">
       <Header />

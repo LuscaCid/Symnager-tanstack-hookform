@@ -1,15 +1,16 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell, app } from "electron"
 import fs from "node:fs/promises"
 import path from "node:path"
-import { apiProcess, normalizeApiUrl } from "./api-process"
+import { apiProcess } from "./api-process"
 import { backupNow, startBackupScheduler } from "./backup"
+import { cloudCheck, cloudPull } from "./cloud"
 import { DesktopConfig, loadConfig, saveConfig, secureGet, secureSet } from "./config"
 import { isSafeExternal, isTrustedUrl } from "./security"
 
 type FileFilter = { name: string; extensions: string[] }
 
 const MAX_OPEN_FILE = 512 * 1024 * 1024
-const ALLOWED_SECURE_KEYS = new Set(["refresh_token"])
+const ALLOWED_SECURE_KEYS = new Set(["refresh_token", "refresh_token_cloud"])
 
 /** Só aceita chamadas vindas da nossa própria página (evita abuso por conteúdo injetado/externo). */
 function assertSender(event: IpcMainInvokeEvent) {
@@ -38,9 +39,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null) {
   handle("config:set", async (_e, partial: Partial<DesktopConfig>) => {
     const before = loadConfig()
     const after = saveConfig(partial ?? {})
-    const needsRestart =
-      before.mode !== after.mode ||
-      (after.mode === "local" && (before.localPort !== after.localPort || before.lanAccess !== after.lanAccess))
+    // a API local fica de pé nos dois modos: só porta e acesso pela rede exigem reiniciar
+    const needsRestart = before.localPort !== after.localPort || before.lanAccess !== after.lanAccess
     if (needsRestart) await apiProcess.restart()
     startBackupScheduler()
     return apiProcess.runtime()
@@ -48,19 +48,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null) {
 
   handle("api:restart", () => apiProcess.restart())
 
-  handle("remote:test", async (_e, url: string) => {
-    if (typeof url !== "string" || !/^https?:\/\//i.test(url)) return { ok: false, message: "Endereço inválido." }
-    try {
-      const res = await fetch(`${normalizeApiUrl(url)}/health`, { signal: AbortSignal.timeout(6000) })
-      if (!res.ok) return { ok: false, message: `O servidor respondeu ${res.status}.` }
-      const data = (await res.json()) as { status?: string; version?: string }
-      return data.status === "ok"
-        ? { ok: true, message: `Conectado (versão ${data.version ?? "?"})` }
-        : { ok: false, message: "Resposta inesperada do servidor." }
-    } catch {
-      return { ok: false, message: "Sem resposta. Verifique endereço, porta, firewall e certificado." }
-    }
-  })
+  handle("cloud:check", () => cloudCheck())
+  handle("cloud:pull", (_e, accessToken: string) => cloudPull(accessToken))
 
   handle("secure:get", (_e, key: string) => (ALLOWED_SECURE_KEYS.has(key) ? secureGet(key) : null))
   handle("secure:set", (_e, key: string, value: string | null) => {

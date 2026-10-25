@@ -1,12 +1,16 @@
-import { ReactNode, useCallback, useEffect, useMemo, useState } from "react"
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createContext, useContextSelector } from "use-context-selector"
 import { useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import type { AuthResponse, LicenseStatus, Role, User } from "@/@types/api"
 import {
+  readRefreshToken,
   refreshSession,
   setAccessToken,
   setApiBaseUrl,
+  setCloudDeniedHandler,
   setLicenseRequiredHandler,
+  setLocalApiBaseUrl,
   setSessionExpiredHandler,
   storeRefreshToken,
 } from "@/service/api"
@@ -66,17 +70,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("authenticated")
   }, [])
 
-  const bootstrap = useCallback(async () => {
+  const bootstrapRef = useRef<() => Promise<void>>(async () => undefined)
+  const bootstrap = useCallback(async (): Promise<void> => {
     setStatus("loading")
     setError(null)
     try {
       const url = await resolveApiBaseUrl()
+      const runtimeInfo = bridge ? await bridge.getRuntime() : null
       setApiUrl(url)
-      setApiBaseUrl(url)
+      setApiBaseUrl(url, runtimeInfo?.mode === "remote")
+      setLocalApiBaseUrl(url)
       if (bridge) {
         const runtime = await bridge.getRuntime()
         if (runtime.apiStatus === "starting") return // aguarda o evento onApiStatus
         if (runtime.apiStatus === "error") throw new Error(runtime.apiError || "A API local não iniciou.")
+        setLocalApiBaseUrl(runtime.localApiUrl)
+        if (runtime.mode === "remote") {
+          // licença sem nuvem (ex.: plano trocado para o vitalício): volta para o banco local
+          const cloud = await bridge.cloudCheck()
+          if (!cloud.ok && cloud.code !== "CLOUD_UNREACHABLE") {
+            toast.error(cloud.message || "Sem acesso ao servidor em nuvem.")
+            await bridge.setConfig({ mode: "local" })
+            return bootstrapRef.current()
+          }
+          if (!cloud.ok) throw new Error(cloud.message || "Servidor em nuvem indisponível.")
+        }
       }
       // licença: com um status válido em cache o app abre direto e a confirmação roda em segundo plano
       const cached = getCachedLicense()
@@ -116,6 +134,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus("offline")
     }
   }, [])
+
+  bootstrapRef.current = bootstrap
+
+  // a nuvem recusou a licença no meio do uso: avisa e volta para o banco deste computador
+  useEffect(() => {
+    if (!bridge) return
+    let switching = false
+    setCloudDeniedHandler(async (info) => {
+      if (switching) return
+      switching = true
+      toast.error(info.message)
+      try {
+        await bridge!.setConfig({ mode: "local" })
+        setAccessToken(null)
+        queryClient.clear()
+        await bootstrapRef.current()
+      } finally {
+        switching = false
+      }
+    })
+  }, [queryClient])
 
   useEffect(() => {
     bootstrap()
@@ -183,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      const token = bridge ? await bridge.secureGet("refresh_token") : null
+      const token = await readRefreshToken()
       await authService.logout(token)
     } catch {
       // mesmo sem resposta do servidor a sessão local é encerrada
