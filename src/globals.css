@@ -105,6 +105,14 @@ input[type="search"]::-webkit-search-cancel-button {
   background: transparent;
 }
 
+/* áreas roláveis sem barra visível (menu lateral) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* barra de título própria do app desktop (Electron, janela sem moldura) */
 .app-drag {
   -webkit-app-region: drag;

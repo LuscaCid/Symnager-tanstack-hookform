@@ -13,9 +13,7 @@ export function Layout() {
     <div className="h-full flex flex-col bg-app print:bg-white">
       <Header />
       <div className="flex flex-1 min-h-0 relative">
-        <div className="print:hidden flex">
-          <Sidebar />
-        </div>
+        <Sidebar />
         <main className="flex-1 min-w-0 min-h-0 flex">
           <Suspense fallback={null}>
             <Outlet />

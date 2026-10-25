@@ -16,7 +16,7 @@ export function ChangeTheme({ compact = false }: { compact?: boolean }) {
             <button
                 onClick={() => toggleTheme(next)}
                 aria-label={next === 'dark' ? 'Tema escuro' : 'Tema claro'}
-                className='mx-auto h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted hover:bg-hover hover:text-fg transition-colors'
+                className='h-9 w-10 inline-flex items-center justify-center rounded-lg text-muted hover:bg-hover hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40'
             >
                 {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
