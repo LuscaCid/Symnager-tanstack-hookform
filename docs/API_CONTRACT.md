@@ -265,3 +265,22 @@ helmet, CORS por allowlist, `@nestjs/throttler` (global 300 req/min; login 10/mi
 JWT sem dados sensíveis, refresh token rotativo com hash SHA-256 em `sessions`, bcrypt 12, lockout,
 RolesGuard, auditoria de ações sensíveis, `x-powered-by` desligado, erros 500 sem stack em produção,
 validação de env no boot (recusa iniciar sem `JWT_SECRET` forte), shutdown hooks do Prisma.
+
+## Detalhes complementares (v1.1 — levantados na implementação do frontend)
+
+1. **Ordenação**: listas aceitam `sort` (nome do campo, ex. `arrived_at`, `created_at`, `name`, `number`) e `order` (`asc|desc`). Campo desconhecido → ignora (usa o padrão), nunca 500.
+2. **Filtro `active`**: `GET /services|/products|/suppliers|/users` aceitam `active=true|false` (omitido = todos).
+3. **`GET /lookups`** retorna também os inativos (a tela de cadastro precisa deles; os selects filtram no cliente). `?active=true` opcional.
+4. **`GET /orders/:id`** inclui `owner` (com `phone`, `document`, `email`), `technician`, `created_by`, `tags`, `items`, `payments` (com `user`), `history` (com `user`, ordem cronológica crescente) e `failures`.
+   `GET /orders` e `GET /orders/board` incluem `owner` e `technician` em cada OS.
+5. **`PUT /orders/:id`** aceita `tags: string[]` (substitui o conjunto) e `discount`. Totais (`total_services`, `total_products`, `total = serviços + produtos − desconto`, `paid`) são sempre recalculados no servidor após itens, pagamentos ou desconto.
+6. **`PATCH /orders/:id/status`**: `message` obrigatório quando `status = CANCELADA` (vira o motivo no histórico).
+7. **Estoque**: em `POST /products/:id/stock` com `type = ADJUST`, `quantity` é o **novo saldo absoluto**; `IN`/`OUT` são deltas positivos. `OUT` não pode deixar saldo negativo (400).
+8. **`GET /failures`** aceita também `from`, `to` (por `occurred_at`) e `q` (busca em `reason`, `description`, número da OS, nome do cliente, equipamento).
+9. **`GET /failures/stats`**: `by_technician` inclui as falhas sem técnico como `{ user_id: null, name: "Sem técnico" }`. `timeline` com `date` em `YYYY-MM-DD`: buckets **diários** se o período ≤ 31 dias, senão **semanais** (data = segunda-feira).
+10. **Dashboard**: `top_services[].service_id` pode ser `null` (itens de descrição livre, agrupados por `name`).
+11. **`GET /audit`** aceita `q` (ação, entidade, nome do usuário, IP).
+12. **Usuários**: `PUT /users/:id` recusa (400) desativar a si mesmo, alterar o próprio `role` e desativar/rebaixar o último ADMIN ativo. `PATCH /users/me` aceita `phone: null`.
+13. **`POST /backup/restore`**: multipart com campos `file` e `password`.
+14. **Cabeçalhos**: o frontend envia `X-Requested-With: symnager` e `withCredentials: true` — CORS deve permitir esse header e `credentials: true`.
+15. **`INTERNAL_TOKEN`** (env, opcional): header `x-internal-token` igual → acesso de sistema **apenas** a `GET /api/backup/database` (backup automático do desktop). Auditar como `BACKUP_AUTO`.
