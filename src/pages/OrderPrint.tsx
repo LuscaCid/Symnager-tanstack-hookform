@@ -7,7 +7,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import type { PrinterInfo } from "@/@types/bridge"
 import type { Settings } from "@/@types/api"
-import { Button, Checkbox, ErrorState, SelectField, TextField } from "@/components/ui"
+import { Button, Checkbox, ErrorState, IconButton, inputClass, SelectField } from "@/components/ui"
 import { A4Document, DEFAULT_PRINT_SETTINGS, ThermalDocument } from "@/components/orders/PrintDocument"
 import { cn } from "@/lib/cn"
 import { formatOrderNumber } from "@/lib/format"
@@ -15,7 +15,7 @@ import { useSettings } from "@/lib/hooks"
 import { getPrintPrefs, setPrintPrefs, trackingUrl } from "@/lib/printPrefs"
 import { bridge } from "@/lib/runtime"
 import { ordersService } from "@/services/resources"
-import { WindowControls } from "@/components/Layout/WindowControls"
+import { hasCustomTitleBar, needsMacInset, WindowControls } from "@/components/Layout/WindowControls"
 
 type Layout = "A4" | "THERMAL"
 
@@ -147,50 +147,28 @@ export default function OrderPrint() {
 
   return (
     <div className="h-full flex flex-col print:block print:h-auto">
-      <div className="no-print app-drag shrink-0 flex flex-wrap items-end gap-2 p-2 pr-0 bg-surface border-b border-line">
-        <Button size="sm" icon={ArrowLeft} onClick={() => navigate(-1)}>
-          Voltar
-        </Button>
-        <div role="group" aria-label="Layout" className="flex rounded-md border border-line overflow-hidden">
-          {(["A4", "THERMAL"] as Layout[]).map((l) => (
-            <button
-              key={l}
-              onClick={() => changeLayout(l)}
-              aria-pressed={layout === l}
-              className={cn(
-                "px-2 py-1 text-sm transition duration-200 first:border-r border-line ",
-                layout === l ? "bg-accent-soft text-accent font-medium" : "text-muted hover:bg-hover",
-              )}
-            >
-              {l === "A4" ? "A4" : "Térmica 80 mm"}
-            </button>
-          ))}
-        </div>
-        {layout === "A4" && <Checkbox label="Duas vias" checked={twoVias} onChange={(e) => setTwoVias(e.target.checked)} />}
-        {bridge && (
-          <>
-            <TextField
-              label="Cópias"
-              type="number"
-              min={1}
-              max={10}
-              value={copies}
-              onChange={(e) => setCopies(Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
-              wrapperClassName="w-20"
-            />
-            <SelectField label="Impressora" value={deviceName} onChange={(e) => setDeviceName(e.target.value)} wrapperClassName="w-56">
-              <option value="">Padrão do sistema</option>
-              {printers.map((p) => (
-                <option key={p.name} value={p.name}>
-                  {p.displayName || p.name}
-                  {p.isDefault ? " (padrão)" : ""}
-                </option>
-              ))}
-            </SelectField>
-            <Checkbox label="Sem diálogo" checked={silent} onChange={(e) => setSilent(e.target.checked)} />
-          </>
+      {/* barra de título: arrastável (desktop), ações principais e controles da janela sempre na mesma linha */}
+      <header
+        className={cn(
+          "no-print shrink-0 h-12 flex items-center gap-3 bg-surface border-b border-line select-none",
+          bridge && "app-drag",
+          needsMacInset ? "pl-20" : "pl-2",
         )}
-        <div className="ml-auto flex gap-2">
+        onDoubleClick={(e) => {
+          if (bridge && e.target === e.currentTarget) bridge.windowControls.toggleMaximize()
+        }}
+      >
+        <IconButton icon={ArrowLeft} label="Voltar" onClick={() => navigate(-1)} />
+        <div className="min-w-0 flex-1 pointer-events-none">
+          <h1 className="text-sm font-semibold truncate">
+            Imprimir {formatOrderNumber(order.number, settings.orders.prefix)}
+          </h1>
+          <p className="text-xs text-muted truncate">
+            {order.device}
+            {order.owner?.name ? ` · ${order.owner.name}` : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 pr-2">
           {bridge && (
             <Button size="sm" icon={FileDown} onClick={handlePdf} disabled={busy}>
               Salvar PDF
@@ -199,10 +177,70 @@ export default function OrderPrint() {
           <Button size="sm" variant="primary" icon={Printer} onClick={handlePrint} loading={busy}>
             Imprimir
           </Button>
-          <div className="h-9 -my-2 flex">
+        </div>
+        {hasCustomTitleBar && (
+          <>
+            <span className="w-px h-5 bg-line" />
             <WindowControls />
+          </>
+        )}
+      </header>
+
+      {/* opções de impressão: rótulos na linha, tudo alinhado ao centro */}
+      <div className="no-print shrink-0 flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 bg-surface border-b border-line text-[13px]">
+        <div className="flex items-center gap-2">
+          <span className="text-muted">Folha</span>
+          <div role="group" aria-label="Tipo de folha" className="flex gap-0.5 p-0.5 rounded-lg bg-subtle">
+            {(["A4", "THERMAL"] as Layout[]).map((l) => (
+              <button
+                key={l}
+                onClick={() => changeLayout(l)}
+                aria-pressed={layout === l}
+                className={cn(
+                  "h-8 px-3 rounded-md font-medium transition-colors duration-100",
+                  layout === l ? "bg-surface text-fg shadow-sm" : "text-muted hover:text-fg",
+                )}
+              >
+                {l === "A4" ? "A4" : "Térmica 80 mm"}
+              </button>
+            ))}
           </div>
         </div>
+        {layout === "A4" && <Checkbox label="Duas vias" checked={twoVias} onChange={(e) => setTwoVias(e.target.checked)} />}
+        {bridge && (
+          <>
+            <label className="flex items-center gap-2">
+              <span className="text-muted">Cópias</span>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={copies}
+                onChange={(e) => setCopies(Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
+                className={cn(inputClass, "w-16 px-2 text-center")}
+              />
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-muted">Impressora</span>
+              <SelectField
+                label="Impressora"
+                hideLabel
+                value={deviceName}
+                onChange={(e) => setDeviceName(e.target.value)}
+                wrapperClassName="w-60"
+              >
+                <option value="">Padrão do sistema</option>
+                {printers.map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.displayName || p.name}
+                    {p.isDefault ? " (padrão)" : ""}
+                  </option>
+                ))}
+              </SelectField>
+            </div>
+            <Checkbox label="Imprimir sem abrir o diálogo" checked={silent} onChange={(e) => setSilent(e.target.checked)} />
+          </>
+        )}
       </div>
       <div className="flex-1 min-h-0 overflow-auto bg-subtle p-4 print:p-0 print:bg-white print:overflow-visible">
         <div className="flex flex-col gap-4 print:gap-0">

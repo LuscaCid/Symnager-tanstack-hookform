@@ -11,6 +11,7 @@ import {
   SkeletonTable,
   SkeletonTabs,
 } from "@/components/ui/Skeleton"
+import { WindowControls } from "@/components/Layout/WindowControls"
 
 /**
  * Skeleton de cada tela. Cada uma tem duas versões:
@@ -426,13 +427,21 @@ export function AuditSkeleton() {
 export function PrintSkeleton() {
   return (
     <Screen>
-      <div className="shrink-0 flex items-center gap-2 p-2 bg-surface border-b border-line">
-        <Bone className="h-8 w-20 rounded-lg" />
-        <SkeletonSegmented items={2} />
-        <div className="ml-auto flex gap-2">
-          <Bone className="h-8 w-24 rounded-lg" />
-          <Bone className="h-8 w-24 rounded-lg" />
+      <div className="app-drag shrink-0 h-12 flex items-center gap-3 pl-2 bg-surface border-b border-line">
+        <Bone className="h-8 w-8 rounded-lg" />
+        <div className="flex-1 flex flex-col gap-1.5">
+          <Bone className="h-3.5 w-36 rounded-full" />
+          <Bone className="h-2.5 w-52 rounded-full" />
         </div>
+        <Bone className="h-8 w-24 rounded-lg" />
+        <Bone className="h-8 w-24 rounded-lg mr-2" />
+        <WindowControls />
+      </div>
+      <div className="shrink-0 flex items-center gap-5 px-4 py-2.5 bg-surface border-b border-line">
+        <SkeletonSegmented items={2} />
+        <Bone className="h-4 w-24 rounded-full" />
+        <Bone className="h-8 w-28 rounded-lg" />
+        <Bone className="h-8 w-60 rounded-lg" />
       </div>
       <div className="flex-1 bg-subtle p-4 overflow-hidden">
         <div className="mx-auto max-w-[190mm] bg-surface rounded-sm shadow p-6 flex flex-col gap-4">
