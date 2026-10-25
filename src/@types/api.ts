@@ -385,7 +385,7 @@ export interface LicenseRequiredError {
   message: string
 }
 
-/** Pedido de licença enviado direto ao servidor de licenças. */
+/** Pedido de licença (POST /license/request; a API repassa ao servidor de licenças). */
 export interface LicenseRequestInput {
   company_name: string
   contact_name: string
@@ -393,7 +393,6 @@ export interface LicenseRequestInput {
   email: string
   phone: string
   message?: string
-  machine_name?: string
 }
 
 export interface AuditLog {

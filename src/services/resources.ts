@@ -1,5 +1,6 @@
 import { api } from "@/service/api"
 import type {
+  LicenseRequestInput,
   LicenseStatus,
   AuditLog,
   AuthResponse,
@@ -58,6 +59,9 @@ export const licenseService = {
   refresh: () => api.post<LicenseStatus>("/license/refresh").then((r) => r.data),
   /** ADMIN: libera a ativação deste computador */
   deactivate: () => api.delete<LicenseStatus>("/license").then((r) => r.data),
+  /** pedido de licença: a API local repassa ao servidor de licenças (preenche o nome da máquina) */
+  request: (data: LicenseRequestInput) =>
+    api.post<{ id: number; status: "PENDING" }>("/license/request", data).then((r) => r.data),
 }
 
 export const authService = {

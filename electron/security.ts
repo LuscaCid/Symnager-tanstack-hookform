@@ -2,13 +2,11 @@ import { loadConfig } from "./config"
 
 export const APP_ORIGIN = "app://symnager"
 export const DEV_URL = process.env.VITE_DEV_SERVER_URL || ""
-/** Servidor de licenças: a tela "Ainda não tenho licença" envia o pedido direto para ele. */
-export const LICENSE_SERVER_ORIGIN = "https://symnager.plune.app.br"
 
 /** Origens que a página pode chamar via fetch/XHR. */
 function connectSources() {
   const config = loadConfig()
-  const sources = ["'self'", "http://127.0.0.1:*", "http://localhost:*", "https://viacep.com.br", LICENSE_SERVER_ORIGIN]
+  const sources = ["'self'", "http://127.0.0.1:*", "http://localhost:*", "https://viacep.com.br"]
   if (config.mode === "remote" && config.remoteUrl) {
     try {
       sources.push(new URL(config.remoteUrl).origin)

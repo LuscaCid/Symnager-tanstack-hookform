@@ -1,7 +1,4 @@
-import type { LicenseRequestInput, LicenseStatus } from "@/@types/api"
-
-/** Servidor de licenças padrão (a API informa outro em `server_url` quando configurada). */
-export const DEFAULT_LICENSE_SERVER = "https://symnager.plune.app.br"
+import type { LicenseStatus } from "@/@types/api"
 
 const CACHE_KEY = "@symnager-license"
 
@@ -51,24 +48,4 @@ export const LICENSE_STATUS_LABEL: Record<string, string> = {
   ACTIVATION_REVOKED: "Ativação revogada",
   ACTIVATION_LIMIT: "Limite de computadores atingido",
   LICENSE_SERVER_UNREACHABLE: "Servidor de licenças indisponível",
-}
-
-export function licenseServerUrl(status?: LicenseStatus | null) {
-  return (status?.server_url || DEFAULT_LICENSE_SERVER).replace(/\/+$/, "")
-}
-
-/** Envia o pedido de licença direto ao servidor de licenças (não passa pela API local). */
-export async function requestLicense(server: string, body: LicenseRequestInput) {
-  const res = await fetch(`${server}/api/v1/requests`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    const message = Array.isArray(data?.message) ? data.message.join("\n") : data?.message
-    if (res.status === 429) throw new Error("Muitos pedidos em pouco tempo. Tente novamente em uma hora.")
-    throw new Error(message || "Não foi possível enviar o pedido agora.")
-  }
-  return data as { id: number; status: "PENDING" }
 }

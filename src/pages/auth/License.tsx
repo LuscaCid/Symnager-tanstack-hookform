@@ -7,7 +7,7 @@ import { z } from "zod"
 import { Button, TextAreaField, TextField } from "@/components/ui"
 import { useAuth } from "@/contexts/Auth-context"
 import { cn } from "@/lib/cn"
-import { formatLicenseKey, LICENSE_KEY_PATTERN, LICENSE_STATUS_LABEL, licenseServerUrl, requestLicense } from "@/lib/license"
+import { formatLicenseKey, LICENSE_KEY_PATTERN, LICENSE_STATUS_LABEL } from "@/lib/license"
 import { getErrorMessage } from "@/service/api"
 import { licenseService } from "@/services/resources"
 import { AuthShell } from "./AuthShell"
@@ -136,7 +136,6 @@ const requestSchema = z.object({
 type RequestForm = z.infer<typeof requestSchema>
 
 function RequestView({ onBack, onSent }: { onBack: () => void; onSent: () => void }) {
-  const license = useAuth((c) => c.license)
   const [error, setError] = useState<string | null>(null)
   const {
     register,
@@ -151,15 +150,14 @@ function RequestView({ onBack, onSent }: { onBack: () => void; onSent: () => voi
     setError(null)
     try {
       const { plan: chosen, message, document, ...rest } = data
-      await requestLicense(licenseServerUrl(license), {
+      await licenseService.request({
         ...rest,
         ...(document ? { document: document.replace(/\D/g, "") } : {}),
         message: [`Plano: ${chosen}`, message].filter(Boolean).join("\n"),
-        ...(license?.machine_name ? { machine_name: license.machine_name } : {}),
       })
       onSent()
     } catch (err) {
-      setError(err instanceof TypeError ? "Sem conexão com o servidor de licenças. Verifique a internet." : getErrorMessage(err))
+      setError(getErrorMessage(err))
     }
   }
 
