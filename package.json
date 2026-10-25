@@ -65,7 +65,7 @@
   "productName": "Symnager",
   "description": "Gerenciador de ordens de serviço para assistências técnicas",
   "author": {
-    "name": "Lucas Cid",
+    "name": "Lucidev",
     "email": "lucasfelipaaa@gmail.com"
   },
   "main": "dist-electron/main.cjs"

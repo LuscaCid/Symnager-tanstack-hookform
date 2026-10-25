@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/Auth-context"
 import { healthService } from "@/services/resources"
 import { bridge, isDesktop } from "@/lib/runtime"
 import { formatDateTime } from "@/lib/format"
+import { useSettings } from "@/lib/hooks"
 
 const SHORTCUTS: [string, string][] = [
   ["Ctrl + K", "Busca global (OS, clientes e telas)"],
@@ -27,6 +28,7 @@ export function AboutSettings() {
   const apiUrl = useAuth((c) => c.apiUrl)
   const runtime = useQuery({ queryKey: ["runtime"], queryFn: () => bridge!.getRuntime(), enabled: isDesktop })
   const health = useQuery({ queryKey: ["health"], queryFn: healthService.check, retry: 0 })
+  const app = useSettings().data?.app
 
   return (
     <div className="flex flex-col gap-3">
@@ -54,11 +56,11 @@ export function AboutSettings() {
             <Row label="Versão da API">{health.data?.version ?? "—"}</Row>
             <Row label="Status">
               {health.data ? (
-                <span className="text-green-600 dark:text-green-400">
+                <span className="text-success">
                   online · banco {health.data.db} · {formatDateTime(health.data.time)}
                 </span>
               ) : (
-                <span className="text-red-500">indisponível</span>
+                <span className="text-danger">indisponível</span>
               )}
             </Row>
           </dl>
@@ -92,6 +94,11 @@ export function AboutSettings() {
           <li>Faça backups periódicos e guarde uma cópia fora deste equipamento.</li>
         </ul>
       </Panel>
+
+      <p className="text-center text-xs text-faint py-2">
+        {app?.name ?? "Symnager"} v{app?.version ?? runtime.data?.version ?? "1.0.0"} · Desenvolvido por{" "}
+        <span className="font-medium text-muted">{app?.developer ?? "Lucidev"}</span>
+      </p>
     </div>
   )
 }
