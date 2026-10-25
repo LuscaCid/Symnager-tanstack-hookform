@@ -17,6 +17,8 @@ import { Button, SelectField, TextAreaField, TextField } from '@/components/ui';
 import { PRIORITIES } from '@/@types/api';
 import { formatOrderNumber, PRIORITY_LABEL } from '@/lib/format';
 import { cn } from '@/lib/cn';
+import type { ChecklistEntry } from '@/@types/api';
+import { answeredOnly, ChecklistEditor } from '@/components/orders/ChecklistEditor';
 
 const defaultValues: NewJobFormSchemaType = {
   device : "",
@@ -45,6 +47,7 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
 
   const [showDetails, setShowDetails] = useState(false)
   const [clientError, setClientError] = useState(false)
+  const [checklist, setChecklist] = useState<ChecklistEntry[]>([])
   const navigate = useNavigate()
   const deviceTypes = useLookups('DEVICE_TYPE')
   const brands = useLookups('BRAND')
@@ -74,6 +77,7 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
         duration : 8000,
       })
       reset(defaultValues)
+      setChecklist([])
       handleRemoveUserSelected()
     }
   })
@@ -83,7 +87,7 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
       setClientError(true)
       return
     }
-    await addNewJobMutation(generateObjectToSend(data, userSelected))
+    await addNewJobMutation(generateObjectToSend(data, userSelected, answeredOnly(checklist)))
   }
 
   function selectUser(user : UsersProperties) {
@@ -160,7 +164,7 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
         aria-expanded={showDetails}
         className='mx-2 flex items-center justify-between text-sm font-semibold p-1 px-2 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800/80 transition duration-200'
       >
-        Detalhes do equipamento (marca, série, acessórios, senha)
+        Detalhes do equipamento (marca, série, acessórios, senha, checklist)
         <ChevronDown size={18} className={cn('transition duration-200', showDetails && 'rotate-180')} />
       </button>
 
@@ -188,6 +192,10 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
             className='min-h-16'
             {...register('condition')}
           />
+          <div className='sm:col-span-2 flex flex-col gap-1'>
+            <span className='text-xs font-semibold text-zinc-600 dark:text-zinc-400'>Checklist de entrada</span>
+            <ChecklistEditor value={checklist} onChange={setChecklist} />
+          </div>
           <p className='sm:col-span-2 text-xs text-zinc-500 flex items-center gap-1'>
             <KeyRound size={12} /> A senha do aparelho só aparece para a equipe, nunca na consulta pública.
           </p>

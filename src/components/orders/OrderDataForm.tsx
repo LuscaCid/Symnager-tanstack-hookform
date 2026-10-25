@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { KeyRound, Save, Undo2 } from "lucide-react"
 import { useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 import { PRIORITIES, type Order, type OrderInput } from "@/@types/api"
@@ -11,6 +11,7 @@ import { useLookups, useTechnicians } from "@/lib/hooks"
 import { PRIORITY_LABEL } from "@/lib/format"
 import { ordersService } from "@/services/resources"
 import { dateInputToIso, isoToDateInput, parseDecimal } from "./orderUtils"
+import { answeredOnly, ChecklistEditor } from "./ChecklistEditor"
 
 const schema = z.object({
   device: z.string().trim().min(2, "Informe o equipamento"),
@@ -31,6 +32,7 @@ const schema = z.object({
   warranty_days: z.string().refine((v) => v === "" || (Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 3650), "Dias inválidos"),
   discount: z.string().refine((v) => parseDecimal(v) >= 0, "Desconto inválido"),
   tags: z.string(),
+  checklist: z.array(z.object({ item: z.string(), ok: z.boolean().nullable(), note: z.string().optional() })),
 })
 type FormType = z.infer<typeof schema>
 
@@ -54,6 +56,7 @@ function toForm(o: Order): FormType {
     warranty_days: String(o.warranty_days ?? 0),
     discount: o.discount ? String(o.discount).replace(".", ",") : "",
     tags: (o.tags ?? []).map((t) => t.slug).join(", "),
+    checklist: o.checklist ?? [],
   }
 }
 
@@ -82,6 +85,8 @@ function toInput(d: FormType): Partial<OrderInput> {
       .split(",")
       .map((t) => t.trim().toLowerCase())
       .filter(Boolean),
+    // campo opcional: só enviado quando há itens verificados
+    ...(answeredOnly(d.checklist).length > 0 ? { checklist: answeredOnly(d.checklist) } : {}),
   }
 }
 
@@ -95,6 +100,7 @@ export function OrderDataForm({ order, readOnly }: { order: Order; readOnly?: bo
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isDirty },
@@ -161,6 +167,14 @@ export function OrderDataForm({ order, readOnly }: { order: Order; readOnly?: bo
             />
             <TextAreaField label="Estado físico na entrada" wrapperClassName="sm:col-span-2" className="min-h-14" {...register("condition")} />
           </div>
+        </Panel>
+
+        <Panel title="Checklist de entrada">
+          <Controller
+            control={control}
+            name="checklist"
+            render={({ field }) => <ChecklistEditor value={field.value} onChange={field.onChange} disabled={readOnly} />}
+          />
         </Panel>
 
         <Panel title="Laudo">

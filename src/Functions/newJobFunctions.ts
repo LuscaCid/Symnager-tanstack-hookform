@@ -1,5 +1,5 @@
 import { NewJobFormSchemaType, UsersProperties } from "@/@types/CreateJob"
-import type { OrderInput } from "@/@types/api"
+import type { ChecklistEntry, OrderInput } from "@/@types/api"
 
 /**
  * funcoes abaixo para geracao de objetos a partir de dados fornecidos atraves dos parametros
@@ -15,7 +15,7 @@ export function parseMoney(value: string | undefined) {
 
 const orNull = (v: string | undefined) => (v && v.trim() ? v.trim() : null)
 
-export function generateObjectToSend(data : NewJobFormSchemaType, userSelected : UsersProperties): OrderInput {
+export function generateObjectToSend(data : NewJobFormSchemaType, userSelected : UsersProperties, checklist : ChecklistEntry[] = []): OrderInput {
   const price = parseMoney(data.price)
   const tags = (data.tag ?? "")
     .split(",")
@@ -36,6 +36,8 @@ export function generateObjectToSend(data : NewJobFormSchemaType, userSelected :
     technician_id : data.technician_id ? Number(data.technician_id) : null,
     due_date : data.due_date ? new Date(`${data.due_date}T18:00:00`).toISOString() : null,
     tags,
+    // só envia quando algo foi verificado (campo opcional na API)
+    ...(checklist.length > 0 ? { checklist } : {}),
     // o "valor do conserto" informado na entrada vira um item de serviço (orçamento inicial)
     items : price > 0 ? [{ kind: "SERVICE", description: "Orçamento inicial", quantity: 1, unit_price: price }] : [],
   }

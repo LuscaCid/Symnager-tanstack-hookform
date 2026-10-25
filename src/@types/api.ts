@@ -150,6 +150,13 @@ export interface DeliveryFailure {
   created_at: string
 }
 
+/** Item do checklist de entrada (ok: true = conforme, false = problema, null = não verificado). */
+export interface ChecklistEntry {
+  item: string
+  ok: boolean | null
+  note?: string
+}
+
 export interface Order {
   order_id: number
   number: number
@@ -174,6 +181,7 @@ export interface Order {
   diagnosis: string | null
   solution: string | null
   internal_notes: string | null
+  checklist?: ChecklistEntry[] | null
   arrived_at: string
   due_date: string | null
   finished_at: string | null
@@ -215,6 +223,7 @@ export interface OrderInput {
   solution?: string | null
   internal_notes?: string | null
   discount?: number
+  checklist?: ChecklistEntry[]
 }
 
 export interface Service {

@@ -37,6 +37,13 @@ function equipmentLines(o: Order) {
     ["Nº de série / IMEI", o.serial],
     ["Acessórios", o.accessories],
     ["Estado na entrada", o.condition],
+    [
+      "Checklist",
+      (o.checklist ?? [])
+        .filter((e) => e.ok !== null)
+        .map((e) => `${e.item}: ${e.ok ? "OK" : "PROBLEMA"}`)
+        .join(" · "),
+    ],
   ].filter(([, v]) => v) as [string, string][]
 }
 
