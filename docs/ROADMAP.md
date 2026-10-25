@@ -32,7 +32,7 @@ Legenda: ✅ entregue nesta versão · 🟡 parcial · ⏭️ próximo passo sug
 | Impressão A4 (2 vias) e térmica 80 mm, QR code, PDF | ✅ |
 | Rastreio público por código | ✅ |
 | Busca global (Ctrl+K) | ✅ |
-| Checklist de entrada (itens marcáveis por OS) | 🟡 cadastro auxiliar existe; marcação por OS ⏭️ |
+| Checklist de entrada (itens marcáveis por OS, impresso no comprovante) | ✅ |
 | Fotos do equipamento na entrada | ⏭️ (upload de anexos) |
 | Assinatura digital do cliente na tela | ⏭️ |
 | Orçamento com aprovação pelo cliente via link | ⏭️ (estender o rastreio público) |

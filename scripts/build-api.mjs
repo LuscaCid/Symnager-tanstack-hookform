@@ -23,8 +23,9 @@ if (!fs.existsSync(path.join(apiDir, "package.json"))) {
 
 if (!skipBuild) {
   if (!fs.existsSync(path.join(apiDir, "node_modules"))) run("npm ci", apiDir)
-  run("npx prisma generate", apiDir)
-  run("npm run build", apiDir)
+  // build:prod = prisma generate + nest build. No Windows exige que nenhuma instância da API esteja rodando
+  // (a DLL do query engine fica travada e o generate falha com EPERM).
+  run("npm run build:prod", apiDir)
 }
 
 const entry = ["dist/main.js", "dist/src/main.js"].find((p) => fs.existsSync(path.join(apiDir, p)))

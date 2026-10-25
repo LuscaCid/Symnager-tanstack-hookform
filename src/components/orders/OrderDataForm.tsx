@@ -10,6 +10,7 @@ import { Button, Panel, SelectField, TextAreaField, TextField } from "@/componen
 import { useLookups, useTechnicians } from "@/lib/hooks"
 import { PRIORITY_LABEL } from "@/lib/format"
 import { ordersService } from "@/services/resources"
+import { useCurrentUser } from "@/contexts/Auth-context"
 import { dateInputToIso, isoToDateInput, parseDecimal } from "./orderUtils"
 import { answeredOnly, ChecklistEditor } from "./ChecklistEditor"
 
@@ -90,9 +91,17 @@ function toInput(d: FormType): Partial<OrderInput> {
   }
 }
 
+/** Campos que o técnico pode alterar (a API responde 403 para os demais). */
+const TECH_FIELDS = ["diagnosis", "solution", "internal_notes", "serial", "condition"] as const
+
+function technicianInput(input: Partial<OrderInput>): Partial<OrderInput> {
+  return Object.fromEntries(TECH_FIELDS.map((k) => [k, input[k]])) as Partial<OrderInput>
+}
+
 /** Painel esquerdo da OS: dados do equipamento, laudo e planejamento. */
 export function OrderDataForm({ order, readOnly }: { order: Order; readOnly?: boolean }) {
   const queryClient = useQueryClient()
+  const isTechnician = useCurrentUser()?.role === "TECNICO"
   const technicians = useTechnicians()
   const deviceTypes = useLookups("DEVICE_TYPE")
   const brands = useLookups("BRAND")
@@ -127,9 +136,14 @@ export function OrderDataForm({ order, readOnly }: { order: Order; readOnly?: bo
   return (
     <form
       noValidate
-      onSubmit={handleSubmit((d) => mutation.mutate(toInput(d)))}
+      onSubmit={handleSubmit((d) => mutation.mutate(isTechnician ? technicianInput(toInput(d)) : toInput(d)))}
       className="flex flex-col gap-2 p-2"
     >
+      {isTechnician && !readOnly && (
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-800 rounded-md p-2">
+          Como técnico, suas alterações salvas são: diagnóstico, solução, observações internas, nº de série e estado físico.
+        </p>
+      )}
       <fieldset disabled={readOnly} className="flex flex-col gap-2 min-w-0">
         <Panel title="Equipamento">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

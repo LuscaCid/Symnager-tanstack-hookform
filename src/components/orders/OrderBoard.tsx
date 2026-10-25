@@ -83,7 +83,9 @@ export function OrderBoard() {
   function handleDrop(e: DragEvent<HTMLElement>, status: OrderStatus) {
     e.preventDefault()
     setOver(null)
-    const order = dragging
+    // o id vem no dataTransfer: não depende do estado React já ter sido atualizado
+    const id = Number(e.dataTransfer.getData(DRAG_TYPE))
+    const order = dragging ?? Object.values(data!).flat().find((o) => o?.order_id === id) ?? null
     setDragging(null)
     if (order && order.status !== status) request(order, status)
   }
@@ -98,7 +100,7 @@ export function OrderBoard() {
             key={status}
             aria-label={STATUS_LABEL[status]}
             onDragOver={(e) => {
-              if (!dragging) return
+              if (!dragging && !e.dataTransfer.types.includes(DRAG_TYPE)) return
               e.preventDefault()
               e.dataTransfer.dropEffect = "move"
               if (over !== status) setOver(status)
