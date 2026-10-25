@@ -1,13 +1,17 @@
 
 import { HistorySection } from "../components/Home/HistoryComponents/HistorySection"
-import "../globals.css"
 import { CreateJobSection } from "../components/Home/CreateJobComponents/CreateJobSection"
+import { SplitPane } from "@/components/ui"
 
 export default function Home(){//history side and create an job side
   return (
-    <div className=" flex-row w-full  flex h-full">
-        <HistorySection />
-        <CreateJobSection />
-    </div>
-  ) 
+    <SplitPane
+      storageKey="recepcao"
+      defaultSize={45}
+      minLeft={300}
+      minRight={360}
+      left={<HistorySection />}
+      right={<CreateJobSection />}
+    />
+  )
 }

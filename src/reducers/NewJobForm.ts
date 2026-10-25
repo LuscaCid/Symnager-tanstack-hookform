@@ -1,31 +1,28 @@
 import { UsersProperties } from "@/@types/CreateJob"
 import { useReducer } from "react"
 
-export type ActionType  = 
+export type ActionType  =
   | { type: 'SET_USER_SELECTED', payload: {data : UsersProperties} }
   | { type: 'REMOVE_USER_SELECTED' }
 
-function reducer (state : UsersProperties | null  , action : ActionType) {
+function reducer (state : UsersProperties | null  , action : ActionType) : UsersProperties | null {
   switch (action.type) {
-    case "SET_USER_SELECTED" : 
+    case "SET_USER_SELECTED" :
       return {
         id : action.payload.data.id,
         name : action.payload.data.name,
-        cpf : action.payload.data.cpf
+        phone : action.payload.data.phone,
+        document : action.payload.data.document
       }
       case "REMOVE_USER_SELECTED" :
-        return {
-          id : '',
-          name : '',
-          cpf : ''
-        }
+        return null
       default: return state
   }
-  
-}
-export function NewJobFormReducerObject () {
 
-  const [userSelected , dispatch] = useReducer(reducer, null)
+}
+export function NewJobFormReducerObject (initial : UsersProperties | null = null) {
+
+  const [userSelected , dispatch] = useReducer(reducer, initial)
 
   function handleSelectUser (user : UsersProperties) {
     dispatch({ type : "SET_USER_SELECTED", payload : {data : user} })
@@ -33,7 +30,7 @@ export function NewJobFormReducerObject () {
   function handleRemoveUserSelected () {
     dispatch({ type : "REMOVE_USER_SELECTED" })
   }
-  
+
   return {
     userSelected,
     handleSelectUser,
@@ -41,5 +38,3 @@ export function NewJobFormReducerObject () {
   }
 
 }
-
-

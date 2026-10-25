@@ -1,22 +1,19 @@
 import { useState } from "react"
 import { HistoryFetchAndRendering } from "./HistoryFetchRender"
+import { SearchInput } from "@/components/ui"
 
 export default function JobsHistory () {
   const [query, setQuery] = useState<string>('')
   return (
-    <div className="flex-col group absolute inset-1 top-14  rounded-md  flex gap-1  p-1 items-center border border-zinc-300 dark:border-zinc-800/80">
-        
-          <input 
-          className="py-1 px-2 rounded-sm bg-zinc-300 rounded- w-full border border-zinc-400 text-md text-zinc-950 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700/80"
-          type="text"
-          placeholder="Pesquisar" 
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        
-        <div className=" border-t border-b w-full overflow-y-auto border-zinc-300 dark:border-zinc-800  rounded-md m-2 flex flex-col gap-2 pr-1 ">           
-         <HistoryFetchAndRendering query={query}/>
-         
-      </div> 
-  </div>
+    <div className="flex-1 min-h-0 flex flex-col gap-1 m-1 p-1 rounded-md border border-zinc-300 dark:border-zinc-800/80">
+      <SearchInput
+        value={query}
+        onChange={setQuery}
+        placeholder="Pesquisar por cliente, equipamento, defeito ou nº da OS"
+      />
+      <div className="flex-1 min-h-0 overflow-y-auto w-full flex flex-col gap-2 pr-1 pt-1">
+        <HistoryFetchAndRendering query={query}/>
+      </div>
+    </div>
   )
 }

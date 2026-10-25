@@ -1,59 +1,42 @@
-import { MouseEvent, useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
+import { useContextSelector } from 'use-context-selector'
+import { ThemeContext } from '@/contexts/Theme-context'
+import { cn } from '@/lib/cn'
 
-export function ChangeTheme() {
-    
-    const [actualTheme, setActualTheme] = useState<string>('')
+export function ChangeTheme({ compact = false }: { compact?: boolean }) {
+    const theme = useContextSelector(ThemeContext, (c) => c.theme)
+    const toggleTheme = useContextSelector(ThemeContext, (c) => c.toggleTheme)
 
+    const buttonClass = 'hover:bg-zinc-200 transition duration-200 rounded-md flex px-1 py-0.5 border border-zinc-300 dark:border-zinc-800/80 items-center dark:hover:bg-zinc-800/80 justify-between gap-1'
 
-    function handleSwitchTheme(e : MouseEvent<HTMLButtonElement>) {
-        e.preventDefault()
-        if(e.currentTarget.name === 'light'){
-            setActualTheme('light')
-            localStorage.setItem('@OS-theme', 'light')
-            
-        } else if(e.currentTarget.name === 'dark'){
-            setActualTheme('dark')
-            localStorage.setItem('@OS-theme', 'dark')
-        }
+    if (compact) {
+        const next = theme === 'dark' ? 'light' : 'dark'
+        return (
+            <button
+                onClick={() => toggleTheme(next)}
+                aria-label={next === 'dark' ? 'Tema escuro' : 'Tema claro'}
+                title={next === 'dark' ? 'Tema escuro' : 'Tema claro'}
+                className={cn(buttonClass, 'justify-center p-1')}
+            >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+        )
     }
 
-    useEffect(() => {
-        const themeFromStorage = localStorage.getItem('@OS-theme')
-        setActualTheme(themeFromStorage ? themeFromStorage : 'light')
-
-        const HtmlElement = document.querySelector('html')
-        if(themeFromStorage === 'dark'){
-            HtmlElement?.classList.add('dark')
-        } else if (themeFromStorage === 'light') {
-            HtmlElement?.classList.remove('dark')
-        }
-
-    }, [])
-
-    useEffect(() => {
-        const HtmlElement = document.querySelector('html')
-        if(actualTheme === 'dark'){
-            HtmlElement?.classList.add('dark')
-        } else if (actualTheme === 'light') {
-            HtmlElement?.classList.remove('dark')
-        }
-    }, [actualTheme])
     return (
-    <>
-        <button 
-            onClick={handleSwitchTheme}
-            name='light' 
-            className='hover:bg-zinc-200 transition duration-200 rounded-md flex px-1 border border-zinc-300  dark:border-zinc-800/80  items-center dark:hover:bg-zinc-800/80 justify-between'>
-            light <Sun size={20} />
+    <div className='flex flex-col gap-1'>
+        <button
+            onClick={() => toggleTheme('light')}
+            aria-pressed={theme === 'light'}
+            className={cn(buttonClass, theme === 'light' && 'bg-zinc-200 dark:bg-zinc-800/80')}>
+            claro <Sun size={18} />
         </button>
-
-            <button 
-            onClick={handleSwitchTheme}
-            name='dark' 
-            className='hover:bg-zinc-200 transition duration-200 rounded-md flex px-1 border border-zinc-300  dark:border-zinc-800/80 items-center dark:hover:bg-zinc-800/80 justify-between'>
-            dark <Moon size={20} />
+        <button
+            onClick={() => toggleTheme('dark')}
+            aria-pressed={theme === 'dark'}
+            className={cn(buttonClass, theme === 'dark' && 'bg-zinc-200 dark:bg-zinc-800/80')}>
+            escuro <Moon size={18} />
         </button>
-        </>
+    </div>
     )
-}  
+}

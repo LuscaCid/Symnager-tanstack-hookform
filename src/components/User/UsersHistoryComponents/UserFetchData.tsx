@@ -1,41 +1,45 @@
-import { useQuery } from "@tanstack/react-query"
-import LoadingHistory from "./loading"
+import { useInfiniteQuery } from "@tanstack/react-query"
+import { Users } from "lucide-react"
 import { UsersRendering } from "./UserRendering"
-import { ClientDataRendering } from "@/@types/Users"
+import { clientsService } from "@/services/resources"
+import { Button, EmptyState, ErrorState, ListSkeleton } from "@/components/ui"
+import { useDebounce } from "@/lib/hooks"
 
 interface Props {
   query : string
 }
 
-export function UserFetch({query} : Props) {
+const PAGE_SIZE = 30
 
-  const {isLoading, data : UsersHistory, isError } = useQuery({
-    queryFn : () => fetchHistory(),
-    queryKey : ["UsersHistory"],
+export function UserFetch({query} : Props) {
+  const q = useDebounce(query.trim(), 300)
+
+  const { isLoading, data, isError, refetch, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey : ["UsersHistory", q],
+    queryFn : ({ pageParam }) => clientsService.list({ q, page : pageParam, page_size : PAGE_SIZE, sort : 'created_at', order : 'desc' }),
+    initialPageParam : 1,
+    getNextPageParam : (last) => last.meta.page * last.meta.page_size < last.meta.total ? last.meta.page + 1 : undefined,
   })
 
-  async function fetchHistory () {  
-    const response = await fetch('http://localhost:3000/clients')
-    const data : ClientDataRendering [] = await response.json()
-    console.log(data)
-    return data
-  }
-
-  
   if(isLoading) {
-    return <LoadingHistory />
+    return <ListSkeleton />
   }
   if(isError) {
-    return (
-      <div>
-        <h1 className="text-3x1">Error when fetchig</h1>
-      </div>
-    )
+    return <ErrorState message="Erro ao carregar clientes." onRetry={() => refetch()} />
+  }
+  const clients = data?.pages.flatMap((p) => p.data) ?? []
+  if (clients.length === 0) {
+    return <EmptyState icon={Users} title={q ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"} />
   }
 
   return (
     <>
-      <UsersRendering UserHistory={UsersHistory} query={query}/>
+      <UsersRendering UserHistory={clients} />
+      {hasNextPage && (
+        <Button size="sm" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
+          Carregar mais
+        </Button>
+      )}
     </>
   )
 

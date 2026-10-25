@@ -1,217 +1,135 @@
-import { api } from "../service/api"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Check, Loader, Pencil, X } from "lucide-react"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import type { ClientToSendToDatabase } from "../components/User/UsersRegister/RegistrationSection"
-import InputWithData from "../components/User/UserDetails/InputWithData"
-import { FormProvider, useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import { ArrowLeft, ClipboardList, Pencil, Plus, Trash2, Wallet, CalendarClock, Wrench } from "lucide-react"
+import { useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
+import { toast } from "sonner"
+import { clientsService } from "@/services/resources"
+import { ClientForm } from "@/components/User/ClientForm"
+import { HistoryBox } from "@/components/Home/HistoryComponents/HistoryBox"
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  ListSkeleton,
+  Page,
+  PageHeader,
+  Pagination,
+  SplitPane,
+  Spinner,
+  StatCard,
+} from "@/components/ui"
+import { useHasRole } from "@/contexts/Auth-context"
+import { formatDocument, formatMoney, formatPhone, formatRelative } from "@/lib/format"
 
-export type IUserFromDatabase = ClientToSendToDatabase
-
-const formSchemaEdition = z.object({
-    name: z.string().optional(),
-    email: z.string().optional(),
-    cpf: z.string().optional(),
-    phone : z.string().optional(),
-    address: z.object({
-      street: z.string().optional(),
-      district: z.string().optional(),
-      city: z.string().optional(),
-      state: z.string().optional(),
-      zipcode: z.string().optional(),
-    }),
-  })
-  
-type FormSchemaEdtionType = z.infer<typeof formSchemaEdition>
-export function ClientDetails () {
+export default function ClientDetails () {
     const navigate = useNavigate()
     const queryClient = useQueryClient()
-    const [searchParams] = useSearchParams()
+    const { id } = useParams()
+    const clientId = Number(id)
+    const [page, setPage] = useState(1)
+    const [confirmDelete, setConfirmDelete] = useState(false)
+    const canDelete = useHasRole('ATENDENTE')
 
-    const { data, isLoading, isError, isSuccess } = useQuery({
-        queryKey : ["user-data"],
-        queryFn : () => fetchUser(),
-        staleTime : Infinity,
-        retry : 2,
-        refetchOnWindowFocus : false
+    const { data, isLoading, isError, refetch } = useQuery({
+        queryKey : ["client", clientId],
+        queryFn : () => clientsService.get(clientId),
+        enabled : Number.isFinite(clientId),
     })
-    
-    async function fetchUser() {
-        const id = searchParams.get("id")
-        try {
-            const response  = await api.get(`/clients?id=${id}`)
-            console.log(response.data)
-            const [data ] : IUserFromDatabase [] = response.data
-            console.log(data)
-            return data
-        } catch (error) {
-            console.log(error)
-            return 
-        }
-    }
 
-    const { mutateAsync : UpdateChangesMutation } = useMutation({
-        mutationFn : updateClient,
+    const orders = useQuery({
+        queryKey : ["client", clientId, "orders", page],
+        queryFn : () => clientsService.orders(clientId, { page, page_size : 10 }),
+        enabled : Number.isFinite(clientId),
+        placeholderData : (prev) => prev,
+    })
+
+    const deletion = useMutation({
+        mutationFn : () => clientsService.remove(clientId),
         onSuccess : () => {
-            queryClient.invalidateQueries({queryKey : ["client-data"]})
-            return alert("Mudancas salvas com Sucesso!")
+            queryClient.invalidateQueries({ queryKey : ["UsersHistory"] })
+            toast.success("Cliente removido.")
+            navigate('/clientes')
         },
-        onError : (error) => console.log(error)
     })
-
-    async function updateClient (data : FormSchemaEdtionType) {
-        const id = searchParams.get("id")
-        console.log(id)
-        const response = await api.put(`/clients/${id}`, data)
-        return response.data
-    }
-    
-    const useFormProperties = useForm<FormSchemaEdtionType>({//criacao de um formulario de edicao que vai receber as modificacoes advindas d
-        resolver : zodResolver(formSchemaEdition),
-        defaultValues : {
-          name : data?.name,
-          email : data?.email,
-          cpf : data?.cpf,
-          phone : data?.phone,
-          address : {
-            street : data?.address.street,
-            district : data?.address.district,
-            city : data?.address.city,
-            state : data?.address.state,
-            zipcode : data?.address.zipcode,
-
-          }
-        }
-      })    
-      
-    const { handleSubmit, reset } = useFormProperties
-    
-    async function handleSubmitEditionForm(data : FormSchemaEdtionType) {
-        console.log(data)
-        const responseData = await UpdateChangesMutation(data)
-        console.log(responseData)
-        reset()
-    }
 
     if(isLoading) {
+        return <Spinner className="w-full" />
+    }
+    if(isError || !data) {
         return (
-            <span className="flex items-center justify-between  w-40 mt-30 mx-auto">
-                Loading... <Loader size={25} className="animate-spin"/>
-            </span>
+            <div className="w-full">
+                <ErrorState message="Não foi possível carregar o cliente." onRetry={() => refetch()} />
+            </div>
         )
     }
-    if(isError) {
-        return (
-            <span className="flex border border-zinc-300 dark:border-zinc-800 p-2  items-center justify-between  w-40 mt-30 mx-auto">
-                Error When Fetching data <X size={25} className="animate-ping"/>
-            </span>
-        )
-    }
-   
+
+    const newOrderLink = `/recepcao?client=${data.client_id}&name=${encodeURIComponent(data.name)}`
+
     return (
-        <main className="relative m-2 overflow-y-auto  w-full p-2 border border-zinc-300 dark:border-zinc-800/80 rounded-md">
-            <h1 className="text-3xl  font-bold flex items-center w-full justify-between p-1 border-b border-zinc-300 dark:border-zinc-800">Editar <Pencil size={24} /></h1>
-            <FormProvider {...useFormProperties}>
-                <form
-                    onSubmit={handleSubmit(handleSubmitEditionForm)} 
-                    className=" flex mt-6 flex-col gap-2 absolute inset-1">
-                    {isSuccess && (
-                        <div>
-                            <div className="flex mt-8  sm:flex-nowrap flex-wrap items-center gap-2 w-full justify-between">
-                            <InputWithData
-                                labelTemplate="Alterar o nome"
-                                
-                                IName="name"
-                                IPlaceholder="Nome"
-                                Id="name"
-    
-                            />
-                            <InputWithData
-                                labelTemplate="Alterar o E-mail" 
-                                IName="email"
-                                IPlaceholder=" E-mail"
-                                Id="email"
-                                
-                            />
-                            <InputWithData
-                                labelTemplate="Alterar o cpf" 
-                                IName="cpf"
-                                IPlaceholder="CPF"
-                                Id="cpf"
-                                
-                            />
+        <Page>
+            <PageHeader
+                icon={Pencil}
+                title={data.name}
+                subtitle={[formatPhone(data.phone), data.document && formatDocument(data.document), data.email].filter(Boolean).join(' · ')}
+                actions={
+                    <>
+                        <IconButton icon={ArrowLeft} label="Voltar" onClick={() => navigate(-1)} />
+                        <Button size="sm" variant="primary" icon={Plus} onClick={() => navigate(newOrderLink)}>Nova OS</Button>
+                        {canDelete && (
+                            <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirmDelete(true)}>Deletar</Button>
+                        )}
+                    </>
+                }
+            />
+            <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2 p-2">
+                <StatCard icon={ClipboardList} label="Ordens de serviço" value={data.stats?.orders_total ?? data._count?.orders ?? 0} />
+                <StatCard icon={Wrench} label="Em aberto" value={data.stats?.orders_open ?? 0} tone={data.stats?.orders_open ? 'warning' : undefined} />
+                <StatCard icon={Wallet} label="Total gasto" value={formatMoney(data.stats?.total_spent)} />
+                <StatCard icon={CalendarClock} label="Última OS" value={data.stats?.last_order_at ? formatRelative(data.stats.last_order_at) : '—'} />
+            </div>
+            <div className="flex-1 min-h-0 border-t border-zinc-300 dark:border-zinc-800">
+                <SplitPane
+                    storageKey="cliente-detalhes"
+                    defaultSize={55}
+                    left={
+                        <div className="h-full overflow-y-auto p-2">
+                            <h2 className="text-xl font-bold mb-2 bg-zinc-200 dark:bg-zinc-800/80 rounded-sm p-1">Editar dados</h2>
+                            <ClientForm client={data} submitLabel="Salvar alterações" />
                         </div>
-                        <div className="flex sm:flex-nowrap flex-wrap items-center gap-2 w-full justify-between">
-                            <InputWithData
-                                labelTemplate="Alterar o Celular" 
-                                IName="phone"
-                                IPlaceholder="Numero do celular"
-                                Id="phone"
-    
-                            />
-                            <InputWithData
-                                labelTemplate="Alterar o CEP" 
-                                IName="address.zipcode"
-                                IPlaceholder="CEP"
-                                Id="zipcode"
-                                
-                            />
-                            <InputWithData
-                                labelTemplate="Alterar a Rua" 
-                                IName="address.street"
-                                IPlaceholder="Nome da rua"
-                                Id="street"
-                                
-                            />
+                    }
+                    right={
+                        <div className="h-full flex flex-col min-h-0">
+                            <h2 className="shrink-0 m-2 mb-0 text-xl font-bold bg-zinc-200 dark:bg-zinc-800/80 rounded-sm p-1">Histórico de OS</h2>
+                            <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2">
+                                {orders.isLoading ? <ListSkeleton count={3} /> :
+                                 orders.data && orders.data.data.length > 0 ? (
+                                    orders.data.data.map((order) => <HistoryBox key={order.order_id} order={order} />)
+                                 ) : (
+                                    <EmptyState
+                                        icon={ClipboardList}
+                                        title="Nenhuma OS para este cliente"
+                                        action={<Button size="sm" icon={Plus} onClick={() => navigate(newOrderLink)}>Abrir a primeira</Button>}
+                                    />
+                                 )}
+                                {orders.data && (
+                                    <Pagination page={page} pageSize={10} total={orders.data.meta.total} onChange={setPage} />
+                                )}
+                            </div>
                         </div>
-                        <div className="flex sm:flex-nowrap flex-wrap items-center gap-2 w-full justify-between">
-                            <InputWithData
-                                labelTemplate="Alterar o Bairro" 
-                                IName="address.district"
-                                IPlaceholder="Bairro"
-                                Id="district"
-    
-                            />
-                            <InputWithData
-                                labelTemplate="Alterar a cidade" 
-                                IName="address.city"
-                                IPlaceholder="Cidade"
-                                Id="city"
-                                
-                            />
-                            <InputWithData
-                                labelTemplate="Alterar o estado" 
-                                IName="address.state"
-                                IPlaceholder="Alterar o estado"
-                                Id="state"
-                                
-                            />
-                    </div>
-                        </div>
-                    )}
-                    <footer className="flex flex-col gap-2 items-center justify-between sm:flex sm:flex-row ">
-                        <button
-                            type="submit" 
-                            className=" font-bold text-md w-full  flex items-center gap-2 rounded-md bg-zinc-200 dark:bg-zinc-800/80  hover:bg-green-300 dark:hover:bg-green-900 transition duration-200 justify-center  p-2 text-bold text-2x1">
-                            <span>Salvar alteracoes</span> <Check className="text-green-500" size={24}  />
-                        </button>
-
-                        <button className=" w-full flex items-center font-bold text-md gap-2 justify-center p-2 bg-zinc-200 dark:bg-zinc-800/80 hover:bg-red-300 dark:hover:bg-red-800 transition duration-200 rounded-md  ">
-                            <span>Deletar</span> <X className="text-red-500 " size={24} /> 
-                        </button>
-                    </footer>
-                    
-                </form>
-            </FormProvider>
-            <button 
-                onClick={() => navigate(-1)}
-                className="absolute bottom-2 flex items-center gap-1 left-2 rounded-sm bg-transparent hover:bg-zinc-200 dark:hover:bg-zinc-900 dark:bg-zinc-800 border transition duration-200 border-zinc-300 dark:border-zinc-900 p-2">
-                <ArrowLeft size={24}/> <span>voltar</span>
-            </button>
-        </main>
-    )     
-
-
+                    }
+                />
+            </div>
+            <ConfirmDialog
+                open={confirmDelete}
+                onOpenChange={setConfirmDelete}
+                title="Remover cliente?"
+                description="O cliente deixa de aparecer nas buscas, mas as ordens de serviço antigas continuam guardadas."
+                confirmLabel="Remover"
+                loading={deletion.isPending}
+                onConfirm={() => deletion.mutate()}
+            />
+        </Page>
+    )
 }

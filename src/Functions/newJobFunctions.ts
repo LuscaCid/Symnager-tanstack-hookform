@@ -1,63 +1,42 @@
-import { AddNewJobMutationType, NewJobFormSchemaType, UsersProperties } from "@/@types/CreateJob"
+import { NewJobFormSchemaType, UsersProperties } from "@/@types/CreateJob"
+import type { OrderInput } from "@/@types/api"
 
 /**
- * FUNCOES ABAIXO RELACIONADAS AO PROCEDIMENTO DE FETCH, CONTROLE DE QUERIES E CACHE 
+ * funcoes abaixo para geracao de objetos a partir de dados fornecidos atraves dos parametros
  */
 
-
-
-export async function AddNewJob(newJobFnData : AddNewJobMutationType) {
-  try {
-    const objectToSend = {
-      client_id : newJobFnData.userSelected.id,
-      arrived_at : new Date().toUTCString(),
-      customer_name : newJobFnData.userSelected.name,
-      description :newJobFnData.description,
-      tag : newJobFnData.tag,
-      device : newJobFnData.device
-    }
-    await fetch('http://localhost:3000/orders', {
-      body : JSON.stringify(objectToSend),
-      method : "POST"
-    })
-    
-  } catch(err : unknown) {
-    alert(err)
-    console.log(err)
-  }
-  
+/** "1.234,50" | "1234.5" -> 1234.5 */
+export function parseMoney(value: string | undefined) {
+  if (!value) return 0
+  const normalized = value.includes(",") ? value.replace(/\./g, "").replace(",", ".") : value
+  const n = Number(normalized)
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0
 }
 
+const orNull = (v: string | undefined) => (v && v.trim() ? v.trim() : null)
 
-
-/**
- * funcoes abaixo para geracao de objetos a partir de dados fornecidos atraves dos parametros 
- */
-
-
-export function generateObjectToSend(data : NewJobFormSchemaType, userSelected : (UsersProperties | null)) {
+export function generateObjectToSend(data : NewJobFormSchemaType, userSelected : UsersProperties): OrderInput {
+  const price = parseMoney(data.price)
+  const tags = (data.tag ?? "")
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean)
   return {
-    tag : data.tag,
-    description : data.description,
-    device : data.device,
-    price : data.price,
-    userSelected : {
-      cpf : userSelected?.cpf,
-      id : userSelected?.id,
-      name : userSelected?.name
-    } as UsersProperties
-  }
-}
-
-export function GenCacheObject(variables :  AddNewJobMutationType){
-  return {
-    device : variables.device,
-    price : variables.price,
-    description : variables.description,
-    arrived_at : new Date().toUTCString(),
-    customer_name : variables.userSelected.name,
-    tag : variables.tag,
-    id : Math.ceil(Math.random() * 3000),
-    client_id : variables.userSelected.id
+    owner_id : userSelected.id,
+    device : data.device.trim(),
+    description : data.description.trim(),
+    device_type : orNull(data.device_type),
+    brand : orNull(data.brand),
+    model : orNull(data.model),
+    serial : orNull(data.serial),
+    accessories : orNull(data.accessories),
+    condition : orNull(data.condition),
+    device_password : orNull(data.device_password),
+    priority : data.priority,
+    technician_id : data.technician_id ? Number(data.technician_id) : null,
+    due_date : data.due_date ? new Date(`${data.due_date}T18:00:00`).toISOString() : null,
+    tags,
+    // o "valor do conserto" informado na entrada vira um item de serviço (orçamento inicial)
+    items : price > 0 ? [{ kind: "SERVICE", description: "Orçamento inicial", quantity: 1, unit_price: price }] : [],
   }
 }

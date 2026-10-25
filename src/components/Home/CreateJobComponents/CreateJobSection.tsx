@@ -1,16 +1,24 @@
 import { Plus } from "lucide-react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { NewJobForm } from "./NewJobForm";
+import { PageHeader } from "@/components/ui";
+import type { UsersProperties } from "@/@types/CreateJob";
 
 export function CreateJobSection () {
+    const [params] = useSearchParams()
+    const location = useLocation()
+    // cliente pré-selecionado: ?client=ID&name=... (detalhes do cliente) ou state após cadastro
+    const fromState = (location.state as { client?: UsersProperties } | null)?.client
+    const clientId = Number(params.get('client'))
+    const initialClient: UsersProperties | null = fromState
+      ?? (clientId ? { id: clientId, name: params.get('name') ?? `Cliente #${clientId}` } : null)
+
     return (
-        <div className="border w-full border-t-0 border-b-0 border-r-0 border-zinc-300 dark:border-zinc-800">
-            <h1 className=" text-3xl font-bold border-b border-zinc-300 dark:border-zinc-800 w-full p-2 flex items-center gap-2">
-                <div className="flex items-center border border-zinc-300 dark:border-zinc-800 rounded-md">
-                    <Plus size={24}/> 
-                </div>
-                Add a job
-            </h1>
-            <NewJobForm />
-        </div>
+        <section className="w-full h-full min-h-0 flex flex-col">
+            <PageHeader icon={Plus} title="Nova OS" />
+            <div className="flex-1 min-h-0 overflow-y-auto">
+                <NewJobForm key={initialClient?.id ?? 'new'} initialClient={initialClient} />
+            </div>
+        </section>
     )
 }
