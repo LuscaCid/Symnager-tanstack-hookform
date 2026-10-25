@@ -1,0 +1,62 @@
+# Symnager web: API (NestJS + SQLite) + frontend (nginx).
+# Uso:  cp .env.example .env  (defina JWT_SECRET)  &&  docker compose up -d --build
+# Acesse http://localhost:8080 — em produção coloque um proxy HTTPS (Caddy/Traefik/nginx) na frente.
+name: symnager
+
+services:
+  api:
+    build:
+      context: ${SYMNAGER_API_DIR:-../Symnager-nest-prisma}
+    image: symnager-api:latest
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      APP_MODE: server
+      HOST: 0.0.0.0
+      PORT: 3333
+      DATABASE_URL: file:/data/symnager.db
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no arquivo .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      REFRESH_TTL_DAYS: ${REFRESH_TTL_DAYS:-30}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      TRUST_PROXY: "true"
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      RUN_MIGRATIONS: "true"
+    volumes:
+      - symnager-data:/data
+    # a API só é acessível pela rede interna (via nginx)
+    expose:
+      - "3333"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3333/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+    image: symnager-web:latest
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /run/nginx
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+
+volumes:
+  symnager-data:

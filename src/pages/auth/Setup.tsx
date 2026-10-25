@@ -40,10 +40,16 @@ export default function Setup() {
   if (status === "offline") return <OfflineScreen />
   if (status !== "needs-setup") return <Navigate to="/" replace />
 
-  async function onSubmit({ confirm: _confirm, ...data }: FormType) {
+  async function onSubmit(data: FormType) {
     setError(null)
     try {
-      await setup({ ...data, company_name: data.company_name || undefined })
+      await setup({
+        name: data.name,
+        username: data.username,
+        email: data.email,
+        password: data.password,
+        company_name: data.company_name || undefined,
+      })
       toast.success("Tudo pronto! Bem-vindo ao Symnager.")
       navigate("/", { replace: true })
     } catch (err) {

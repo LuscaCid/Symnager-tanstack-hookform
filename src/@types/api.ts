@@ -338,7 +338,8 @@ export interface CompanySettings {
 
 export interface Settings {
   company: CompanySettings
-  orders: { prefix: string; default_warranty_days: number; terms: string; require_technician: boolean }
+  /** public_url: endereço web onde /rastreio fica acessível aos clientes (vazio = QR mostra só o código) */
+  orders: { prefix: string; default_warranty_days: number; terms: string; require_technician: boolean; public_url?: string }
   print: { layout: 'A4' | 'THERMAL'; copies: number; show_qrcode: boolean; show_prices: boolean }
 }
 

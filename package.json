@@ -1,14 +1,22 @@
 {
   "name": "symnager",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "server": "npx json-server server.json",
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p electron",
+    "build:electron": "node scripts/build-electron.mjs",
+    "build:api": "node scripts/build-api.mjs",
+    "electron:dev": "node scripts/build-electron.mjs && concurrently -k -n vite,electron \"vite\" \"wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "electron:start": "npm run build && node scripts/build-electron.mjs && electron .",
+    "electron:pack": "npm run build && npm run build:api && node scripts/build-electron.mjs && electron-builder --config electron-builder.yml --dir",
+    "electron:build": "npm run build && npm run build:api && cross-env NODE_ENV=production node scripts/build-electron.mjs && electron-builder --config electron-builder.yml",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -50,5 +58,12 @@
     "typescript": "^5.2.2",
     "vite": "^5.1.4",
     "wait-on": "^9.5.1"
-  }
+  },
+  "productName": "Symnager",
+  "description": "Gerenciador de ordens de serviço para assistências técnicas",
+  "author": {
+    "name": "Lucas Cid",
+    "email": "lucasfelipaaa@gmail.com"
+  },
+  "main": "dist-electron/main.cjs"
 }

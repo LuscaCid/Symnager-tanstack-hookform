@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# electron / empacotamento
+dist-electron
+release
+build/api
+.env

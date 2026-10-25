@@ -223,7 +223,8 @@ Chaves conhecidas:
 ```ts
 {
   company: { name, document, phone, email, address, city, state, zipcode, logo /* data URL ≤ 300KB */ },
-  orders:  { prefix: 'OS', default_warranty_days: 90, terms /* texto impresso no rodapé */, require_technician: false },
+  orders:  { prefix: 'OS', default_warranty_days: 90, terms /* texto impresso no rodapé */, require_technician: false,
+             public_url: '' /* URL web pública do /rastreio, usada no QR do comprovante */ },
   print:   { layout: 'A4'|'THERMAL', copies: 1, show_qrcode: true, show_prices: true }
 }
 ```

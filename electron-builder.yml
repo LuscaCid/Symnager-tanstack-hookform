@@ -1,0 +1,54 @@
+appId: br.com.symnager.app
+productName: Symnager
+copyright: Copyright © 2026 Symnager
+
+directories:
+  output: release
+  buildResources: build
+
+# o renderer (Vite) e o main (esbuild) já são bundles: nenhum node_modules do frontend vai no app
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - build/icon.png
+  - package.json
+  - "!node_modules/**/*"
+
+# a API Nest roda fora do asar (Prisma carrega o query engine nativo do disco)
+extraResources:
+  - from: build/api
+    to: api
+    filter:
+      - "**/*"
+
+asar: true
+npmRebuild: false
+compression: maximum
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.png
+  artifactName: Symnager-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Symnager
+  # os dados (banco, backups) ficam em %APPDATA%\Symnager e são preservados na desinstalação
+  deleteAppDataOnUninstall: false
+
+linux:
+  target: [AppImage, deb]
+  category: Office
+  icon: build/icon.png
+  maintainer: Symnager
+
+mac:
+  target: [dmg]
+  category: public.app-category.business
+  icon: build/icon.png
