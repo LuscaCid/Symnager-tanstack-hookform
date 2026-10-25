@@ -13,7 +13,7 @@ import {
 
 const {
   Dashboard, Home, Orders, OrderDetails, OrderPrint, User, ClientDetails, Failures, Services, Products,
-  Suppliers, Users, Lookups, Settings, Audit, Login, Setup, Connection, Track, NotFound,
+  Suppliers, Users, Lookups, Settings, Audit, Login, Setup, Connection, Track, NotFound, License,
 } = pages
 
 /** Inicialização (verificando servidor/sessão): casca do app em skeleton. */
@@ -62,6 +62,12 @@ function LegacyClientDetails() {
 }
 
 export default function AppRoutes(){
+  const status = useAuth((c) => c.status)
+  const location = useLocation()
+  // sem licença válida, tudo (menos conexão e rastreio público) cai na tela de ativação
+  if (status === 'unlicensed' && !/^\/(conexao|rastreio)/.test(location.pathname)) {
+    return withSkeleton(License, AuthSkeleton)
+  }
   return (
     <Suspense fallback={<FullScreenLoading />}>
       <Routes>

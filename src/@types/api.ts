@@ -352,6 +352,48 @@ export interface Settings {
   print: { layout: 'A4' | 'THERMAL'; copies: number; show_qrcode: boolean; show_prices: boolean }
   /** somente leitura: assinatura do produto enviada pela API (PUT recusa) */
   app?: { name: string; developer: string; version: string }
+  /** somente leitura: situação da licença desta instalação */
+  license?: LicenseStatus
+}
+
+/** Situação da licença (GET /license, público). */
+export type LicenseState =
+  | 'ACTIVE' | 'OFFLINE' | 'UNLICENSED' | 'EXPIRED' | 'CLOCK_TAMPERED' | 'INVALID_TOKEN'
+  | 'LICENSE_NOT_FOUND' | 'TENANT_PENDING' | 'TENANT_BLOCKED' | 'LICENSE_BLOCKED' | 'LICENSE_EXPIRED'
+  | 'ACTIVATION_REVOKED' | 'ACTIVATION_LIMIT' | 'LICENSE_SERVER_UNREACHABLE'
+
+export interface LicenseStatus {
+  valid: boolean
+  status: LicenseState | string
+  message: string | null
+  key_masked: string | null
+  tenant: { id: number; name: string; document: string | null } | null
+  plan: string | null
+  license_expires_at: string | null
+  offline_until: string | null
+  activated_at: string | null
+  last_check_at: string | null
+  machine_name: string | null
+  machine_id: string | null
+  server_url: string | null
+}
+
+/** Corpo do 402 que a API devolve quando a licença não é válida. */
+export interface LicenseRequiredError {
+  code: 'LICENSE_REQUIRED'
+  license_status: string
+  message: string
+}
+
+/** Pedido de licença enviado direto ao servidor de licenças. */
+export interface LicenseRequestInput {
+  company_name: string
+  contact_name: string
+  document?: string
+  email: string
+  phone: string
+  message?: string
+  machine_name?: string
 }
 
 export interface AuditLog {

@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios"
-import type { AuthResponse } from "@/@types/api"
+import type { AuthResponse, LicenseRequiredError } from "@/@types/api"
 import { bridge } from "@/lib/runtime"
 
 /**
@@ -22,6 +22,7 @@ const REFRESH_KEY = "refresh_token"
 let accessToken: string | null = null
 let refreshing: Promise<AuthResponse | null> | null = null
 let onSessionExpired: (() => void) | null = null
+let onLicenseRequired: ((info: LicenseRequiredError) => void) | null = null
 
 export function setApiBaseUrl(url: string) {
   api.defaults.baseURL = url
@@ -37,6 +38,11 @@ export function getAccessToken() {
 
 export function setSessionExpiredHandler(fn: () => void) {
   onSessionExpired = fn
+}
+
+/** Chamado quando qualquer rota responde 402 LICENSE_REQUIRED (licença ausente, vencida ou bloqueada). */
+export function setLicenseRequiredHandler(fn: (info: LicenseRequiredError) => void) {
+  onLicenseRequired = fn
 }
 
 export async function storeRefreshToken(token: string | null) {
@@ -87,6 +93,11 @@ api.interceptors.response.use(
     const original = error.config as RetriableConfig | undefined
     const url = original?.url ?? ""
     const isAuthRoute = /\/auth\/(login|refresh|setup)/.test(url)
+    const body = error.response?.data as Partial<LicenseRequiredError> | undefined
+    if (error.response?.status === 402 && body?.code === "LICENSE_REQUIRED") {
+      onLicenseRequired?.(body as LicenseRequiredError)
+      return Promise.reject(error)
+    }
     if (error.response?.status === 401 && original && !original._retried && !isAuthRoute) {
       original._retried = true
       const session = await refreshSession()

@@ -30,6 +30,7 @@ export const pages = {
   Audit: lazyPage(() => import("../pages/Audit")),
   Login: lazyPage(() => import("../pages/auth/Login")),
   Setup: lazyPage(() => import("../pages/auth/Setup")),
+  License: lazyPage(() => import("../pages/auth/License")),
   Connection: lazyPage(() => import("../pages/auth/Connection")),
   Track: lazyPage(() => import("../pages/Track")),
   NotFound: lazyPage(() => import("../pages/NotFound")),

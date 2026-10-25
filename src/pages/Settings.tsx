@@ -1,4 +1,4 @@
-import { Building2, ClipboardList, Database, Info, Palette, Printer, Server, Settings as SettingsIcon, User } from "lucide-react"
+import { Building2, ClipboardList, Database, Info, KeyRound, Palette, Printer, Server, Settings as SettingsIcon, User } from "lucide-react"
 import { Navigate, useNavigate, useParams } from "react-router-dom"
 import { Page, PageBody, PageHeader, Panel, Tabs, TabItem } from "@/components/ui"
 import { useHasRole } from "@/contexts/Auth-context"
@@ -11,8 +11,9 @@ import { PrintSettings } from "@/components/settings/PrintSettings"
 import { BackupSettings } from "@/components/settings/BackupSettings"
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings"
 import { AboutSettings } from "@/components/settings/AboutSettings"
+import { LicenseSettings } from "@/components/settings/LicenseSettings"
 
-type TabKey = "perfil" | "empresa" | "ordens" | "impressao" | "conexao" | "backup" | "aparencia" | "sobre"
+type TabKey = "perfil" | "empresa" | "ordens" | "impressao" | "conexao" | "backup" | "aparencia" | "licenca" | "sobre"
 
 function ConnectionTab() {
   return (
@@ -42,6 +43,7 @@ export default function Settings() {
     { key: "conexao", label: "Conexão", icon: Server },
     { key: "backup", label: "Backup", icon: Database, hidden: !isAdmin },
     { key: "aparencia", label: "Aparência", icon: Palette },
+    { key: "licenca", label: "Licença", icon: KeyRound },
     { key: "sobre", label: "Sobre", icon: Info },
   ]
 
@@ -51,7 +53,7 @@ export default function Settings() {
 
   return (
     <Page>
-      <PageHeader icon={SettingsIcon} title="Configurações" subtitle="Perfil, empresa, impressão, conexão e backup" />
+      <PageHeader icon={SettingsIcon} title="Configurações" subtitle="Perfil, empresa, impressão, conexão, backup e licença" />
       <Tabs tabs={tabs} value={current} onChange={(key) => navigate(`/configuracoes/${key}`)} />
       <PageBody>
         <div className="max-w-3xl mx-auto w-full">
@@ -62,6 +64,7 @@ export default function Settings() {
           {current === "conexao" && <ConnectionTab />}
           {current === "backup" && <BackupSettings />}
           {current === "aparencia" && <AppearanceSettings />}
+          {current === "licenca" && <LicenseSettings />}
           {current === "sobre" && <AboutSettings />}
         </div>
       </PageBody>

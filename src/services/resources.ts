@@ -1,5 +1,6 @@
 import { api } from "@/service/api"
 import type {
+  LicenseStatus,
   AuditLog,
   AuthResponse,
   Client,
@@ -49,6 +50,14 @@ function crud<T, TInput = Partial<T>>(path: string) {
 
 export const healthService = {
   check: () => api.get<Health>("/health", { timeout: 5000 }).then((r) => r.data),
+}
+
+export const licenseService = {
+  status: () => api.get<LicenseStatus>("/license").then((r) => r.data),
+  activate: (key: string) => api.post<LicenseStatus>("/license/activate", { key }).then((r) => r.data),
+  refresh: () => api.post<LicenseStatus>("/license/refresh").then((r) => r.data),
+  /** ADMIN: libera a ativação deste computador */
+  deactivate: () => api.delete<LicenseStatus>("/license").then((r) => r.data),
 }
 
 export const authService = {
