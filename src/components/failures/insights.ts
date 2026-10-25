@@ -57,7 +57,7 @@ export function buildInsights(stats: FailureStats): Insight[] {
   if (stats.open > 0 && stats.open / stats.total >= 0.3) {
     out.push({
       tone: "warning",
-      text: `${stats.open} falhas ainda sem resolução (${pct(stats.open / stats.total)}). Tempo médio para resolver: ${formatHours(stats.avg_resolution_hours)}.`,
+      text: `${stats.open} ${stats.open === 1 ? "falha ainda" : "falhas ainda"} sem resolução (${pct(stats.open / stats.total)}). Tempo médio para resolver: ${formatHours(stats.avg_resolution_hours)}.`,
     })
   } else if (stats.rate > 0 && stats.rate <= 0.03) {
     out.push({ tone: "success", text: `Taxa de falha em ${pct(stats.rate)} das entregas — dentro de um patamar saudável.` })

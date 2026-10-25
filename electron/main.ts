@@ -14,8 +14,10 @@ protocol.registerSchemesAsPrivileged([
 
 app.setAppUserModelId("br.com.symnager.app")
 
-// em desenvolvimento os dados ficam separados da instalação real (%APPDATA%\Symnager-dev)
-if (!app.isPackaged) app.setPath("userData", path.join(app.getPath("appData"), "Symnager-dev"))
+// em desenvolvimento os dados ficam separados da instalação real (%APPDATA%\Symnager-dev);
+// SYMNAGER_USER_DATA aponta outra pasta (ambiente de demonstração, gravações)
+if (!app.isPackaged)
+  app.setPath("userData", process.env.SYMNAGER_USER_DATA || path.join(app.getPath("appData"), "Symnager-dev"))
 
 let mainWindow: BrowserWindow | null = null
 

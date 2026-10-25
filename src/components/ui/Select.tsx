@@ -60,6 +60,8 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(funct
   const triggerId = id ?? `${name ?? "select"}-${autoId}`
   const nativeRef = useRef<HTMLSelectElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  // último valor escrito (reset/setValue/escolha): o select nativo o descarta se a opção ainda não existe
+  const intendedRef = useRef<string | null>(null)
   const [open, setOpen] = useState(false)
   const options = useMemo(() => readOptions(children), [children])
   const controlled = props.value !== undefined
@@ -79,6 +81,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(funct
           configurable: true,
           get: () => previous.get!.call(el),
           set: (v: string) => {
+            intendedRef.current = v == null ? null : String(v)
             previous.set!.call(el, v)
             setCurrent(nativeValue.get!.call(el))
           },
@@ -92,7 +95,14 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(funct
   // quando as opções chegam depois (listas da API), relê o valor real do select
   const optionsKey = options.map((o) => o.value).join("|")
   useLayoutEffect(() => {
-    if (nativeRef.current) setCurrent(nativeValue.get!.call(nativeRef.current))
+    const el = nativeRef.current
+    if (!el) return
+    const intended = intendedRef.current
+    if (intended && nativeValue.get!.call(el) !== intended && options.some((o) => o.value === intended)) {
+      nativeValue.set!.call(el, intended)
+    }
+    setCurrent(nativeValue.get!.call(el))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [optionsKey])
 
   const selected = options.find((o) => o.value === value)
@@ -100,6 +110,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(funct
 
   function choose(next: string) {
     const el = nativeRef.current
+    intendedRef.current = next
     if (el) {
       nativeValue.set!.call(el, next)
       el.dispatchEvent(new Event("change", { bubbles: true }))
