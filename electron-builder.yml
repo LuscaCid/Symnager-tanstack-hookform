@@ -18,8 +18,11 @@ files:
 extraResources:
   - from: build/api
     to: api
+    # node_modules é sempre ignorado aqui; scripts/after-pack.cjs copia as dependências da API
     filter:
       - "**/*"
+
+afterPack: scripts/after-pack.cjs
 
 asar: true
 npmRebuild: false

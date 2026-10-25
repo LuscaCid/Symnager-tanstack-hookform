@@ -67,6 +67,11 @@ fs.cpSync(generated, path.join(outDir, "node_modules", ".prisma"), { recursive: 
 const platformTag = { win32: "windows", darwin: "darwin", linux: "debian" }[process.platform]
 const clientDir = path.join(outDir, "node_modules", ".prisma", "client")
 for (const f of fs.readdirSync(clientDir)) {
+  // restos de "prisma generate" interrompido (rename falhou com o engine em uso)
+  if (/\.tmp\d*$/.test(f)) {
+    fs.rmSync(path.join(clientDir, f), { force: true })
+    continue
+  }
   if (/^(lib)?query_engine/.test(f) && platformTag && !f.includes(platformTag)) {
     fs.rmSync(path.join(clientDir, f), { force: true })
   }
