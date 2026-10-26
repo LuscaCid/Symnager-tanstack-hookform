@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/Auth-context"
 import { getErrorMessage } from "@/service/api"
 import OfflineScreen from "./Offline"
 import { AuthShell } from "./AuthShell"
+import { BackToLocal } from "./BackToLocal"
 
 const schema = z.object({
   login: z.string().trim().min(1, "Informe o e-mail ou usuário"),
@@ -67,6 +68,9 @@ export default function Login() {
           Entrar
         </Button>
       </form>
+      <div className="mt-2">
+        <BackToLocal />
+      </div>
     </AuthShell>
   )
 }

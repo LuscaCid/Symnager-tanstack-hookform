@@ -17,6 +17,7 @@ import { segmentsService } from "@/services/resources"
 import { passwordSchema, usernameSchema } from "@/lib/validation"
 import OfflineScreen from "./Offline"
 import { AuthShell } from "./AuthShell"
+import { BackToLocal } from "./BackToLocal"
 
 const schema = z
   .object({
@@ -143,6 +144,9 @@ export default function Setup() {
           Criar e começar
         </Button>
       </form>
+      <div className="mt-2">
+        <BackToLocal />
+      </div>
     </AuthShell>
   )
 }

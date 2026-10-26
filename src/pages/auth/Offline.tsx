@@ -4,6 +4,7 @@ import { Button } from "@/components/ui"
 import { useAuth } from "@/contexts/Auth-context"
 import { isDesktop } from "@/lib/runtime"
 import { AuthShell } from "./AuthShell"
+import { BackToLocal } from "./BackToLocal"
 
 export default function OfflineScreen() {
   const error = useAuth((c) => c.error)
@@ -33,6 +34,7 @@ export default function OfflineScreen() {
             Configurar conexão
           </Button>
         </div>
+        <BackToLocal />
       </div>
     </AuthShell>
   )
