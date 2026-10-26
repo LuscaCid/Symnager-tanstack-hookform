@@ -10,8 +10,10 @@ import { cn } from "@/lib/cn"
 
 const PAGE_SIZE = 30
 
-function prettyMeta(meta: string | null) {
-  if (!meta) return null
+/** A API devolve meta já como objeto (versões antigas mandavam o JSON em texto). */
+function prettyMeta(meta: AuditLog["meta"]): string | null {
+  if (meta == null || meta === "") return null
+  if (typeof meta !== "string") return JSON.stringify(meta, null, 2)
   try {
     return JSON.stringify(JSON.parse(meta), null, 2)
   } catch {

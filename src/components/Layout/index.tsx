@@ -1,5 +1,6 @@
 import { Suspense, useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { setNotifyNavigator } from "@/lib/notify";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar/Sidebar";
@@ -11,6 +12,7 @@ import { Sidebar } from "./Sidebar/Sidebar";
  */
 export function Layout() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   // toasts de limite do plano ("Ver planos") navegam por aqui
   useEffect(() => {
     setNotifyNavigator(navigate)
@@ -23,9 +25,11 @@ export function Layout() {
       <div className="flex flex-1 min-h-0 relative">
         <Sidebar />
         <main className="flex-1 min-w-0 min-h-0 flex">
-          <Suspense fallback={null}>
-            <Outlet />
-          </Suspense>
+          <ErrorBoundary resetKey={pathname}>
+            <Suspense fallback={null}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
     </div>

@@ -14,6 +14,8 @@ type BoardData = Partial<Record<OrderStatus, Order[]>>
 interface Pending {
   order: Order
   status: OrderStatus
+  /** coluna do quadro de destino (undefined = fora do quadro) */
+  column?: string | null
   reason: "balance" | "cancel" | "reopen"
 }
 
@@ -26,10 +28,10 @@ export function useStatusChange() {
   const [message, setMessage] = useState("")
 
   const mutation = useMutation({
-    mutationFn: ({ order, status, note }: { order: Order; status: OrderStatus; note?: string }) =>
-      ordersService.setStatus(order.order_id, status, note),
+    mutationFn: ({ order, status, note, column }: { order: Order; status: OrderStatus; note?: string; column?: string | null; label?: string }) =>
+      ordersService.setStatus(order.order_id, status, note, column),
     // atualização otimista do quadro: o cartão muda de coluna na hora
-    onMutate: async ({ order, status }) => {
+    onMutate: async ({ order, status, column }) => {
       await queryClient.cancelQueries({ queryKey: ["orders", "board"] })
       const previous = queryClient.getQueryData<BoardData>(["orders", "board"])
       if (previous) {
@@ -37,7 +39,7 @@ export function useStatusChange() {
         for (const [key, list] of Object.entries(previous) as [OrderStatus, Order[]][]) {
           next[key] = list.filter((o) => o.order_id !== order.order_id)
         }
-        next[status] = [{ ...order, status }, ...(next[status] ?? [])]
+        next[status] = [{ ...order, status, board_column: column ?? null }, ...(next[status] ?? [])]
         queryClient.setQueryData(["orders", "board"], next)
       }
       return { previous }
@@ -45,8 +47,8 @@ export function useStatusChange() {
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(["orders", "board"], ctx.previous)
     },
-    onSuccess: (_data, { order, status }) => {
-      toast.success(`${formatOrderNumber(order.number)} → ${statusLabel(status)}`)
+    onSuccess: (_data, { order, status, label }) => {
+      toast.success(`${formatOrderNumber(order.number)} → ${label ?? statusLabel(status)}`)
     },
     onSettled: (_data, _err, { order }) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] })
@@ -56,8 +58,15 @@ export function useStatusChange() {
     },
   })
 
-  function request(order: Order, status: OrderStatus) {
-    if (order.status === status) return
+  /**
+   * `column` vem do quadro: com o mesmo status, só move o cartão de coluna.
+   * `label` é o nome da coluna para o aviso.
+   */
+  function request(order: Order, status: OrderStatus, column?: string | null, label?: string) {
+    if (order.status === status) {
+      if (column !== undefined && column !== (order.board_column ?? null)) mutation.mutate({ order, status, column, label })
+      return
+    }
     if (isFinal(order.status)) {
       if (!isAdmin) {
         toast.error("Apenas administradores podem reabrir uma OS entregue ou cancelada.")
@@ -67,14 +76,14 @@ export function useStatusChange() {
       return
     }
     if (status === "ENTREGUE" && balanceOf(order) > 0) {
-      setPending({ order, status, reason: "balance" })
+      setPending({ order, status, column, reason: "balance" })
       return
     }
     if (status === "CANCELADA") {
-      setPending({ order, status, reason: "cancel" })
+      setPending({ order, status, column, reason: "cancel" })
       return
     }
-    mutation.mutate({ order, status })
+    mutation.mutate({ order, status, column, label })
   }
 
   function close() {
@@ -126,7 +135,10 @@ export function useStatusChange() {
           toast.error("Informe o motivo do cancelamento.")
           return
         }
-        mutation.mutate({ order: pending.order, status: pending.status, note: message.trim() || undefined }, { onSuccess: close })
+        mutation.mutate(
+          { order: pending.order, status: pending.status, column: pending.column, note: message.trim() || undefined },
+          { onSuccess: close },
+        )
       }}
     />
   )

@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query"
 import { OrderBoardSkeleton } from "@/components/skeletons/PageSkeletons"
-import { CalendarClock, GripVertical, User } from "lucide-react"
-import { DragEvent, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { ORDER_STATUSES, type Order, type OrderStatus } from "@/@types/api"
+import { CalendarClock, Columns3, GripVertical, User } from "lucide-react"
+import { DragEvent, useMemo, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import type { BoardColumn, Order } from "@/@types/api"
 import { ErrorState, PriorityBadge, Tooltip } from "@/components/ui"
 import { cn } from "@/lib/cn"
-import { formatDate, formatMoney, formatOrderNumber, STATUS_HEX } from "@/lib/format"
+import { useHasRole } from "@/contexts/Auth-context"
+import { useBoardColumns } from "@/lib/board"
+import { formatDate, formatMoney, formatOrderNumber } from "@/lib/format"
 import { useSegment } from "@/lib/segment"
 import { ordersService } from "@/services/resources"
 import { isOverdue } from "./orderUtils"
@@ -67,7 +69,7 @@ function BoardCard({ order, onDragStart, onDragEnd }: { order: Order; onDragStar
   )
 }
 
-/** Quadro kanban: arraste os cartões entre colunas para mudar o status. */
+/** Quadro kanban: arraste os cartões entre colunas para mudar o status (colunas em Configurações → Quadro). */
 export function OrderBoard() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["orders", "board"],
@@ -75,75 +77,105 @@ export function OrderBoard() {
     refetchInterval: 60_000,
   })
   const { request, dialog } = useStatusChange()
+  const { columns, labelOf, colorOf, columnOf, missing } = useBoardColumns()
   const { statusLabel } = useSegment()
+  const isAdmin = useHasRole()
   const [dragging, setDragging] = useState<Order | null>(null)
-  const [over, setOver] = useState<OrderStatus | null>(null)
+  const [over, setOver] = useState<string | null>(null)
+
+  const byColumn = useMemo(() => {
+    const map = new Map<string, Order[]>(columns.map((c) => [c.key, []]))
+    for (const order of Object.values(data ?? {}).flat()) {
+      if (!order) continue
+      const col = columnOf(order)
+      if (col) map.get(col.key)?.push(order)
+    }
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, columns])
 
   if (isLoading) return <OrderBoardSkeleton />
   if (isError || !data) return <ErrorState message="Não foi possível carregar o quadro." onRetry={() => refetch()} />
 
-  function handleDrop(e: DragEvent<HTMLElement>, status: OrderStatus) {
+  const hidden = missing.reduce((n, s) => n + (data[s]?.length ?? 0), 0)
+
+  function handleDrop(e: DragEvent<HTMLElement>, col: BoardColumn) {
     e.preventDefault()
     setOver(null)
     // o id vem no dataTransfer: não depende do estado React já ter sido atualizado
     const id = Number(e.dataTransfer.getData(DRAG_TYPE))
     const order = dragging ?? Object.values(data!).flat().find((o) => o?.order_id === id) ?? null
     setDragging(null)
-    if (order && order.status !== status) request(order, status)
+    if (order && columnOf(order)?.key !== col.key) request(order, col.status, col.key, labelOf(col))
   }
 
   return (
-    <div className="h-full flex gap-2 overflow-x-auto overflow-y-hidden p-2">
-      {ORDER_STATUSES.map((status) => {
-        const orders = data[status] ?? []
-        const isTarget = over === status && dragging && dragging.status !== status
-        return (
-          <section
-            key={status}
-            aria-label={statusLabel(status)}
-            onDragOver={(e) => {
-              if (!dragging && !e.dataTransfer.types.includes(DRAG_TYPE)) return
-              e.preventDefault()
-              e.dataTransfer.dropEffect = "move"
-              if (over !== status) setOver(status)
-            }}
-            onDragLeave={(e) => {
-              if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver((s) => (s === status ? null : s))
-            }}
-            onDrop={(e) => handleDrop(e, status)}
-            className={cn(
-              "w-72 shrink-0 h-full flex flex-col rounded-xl border transition duration-200",
-              isTarget
-                ? "border-accent/50 bg-accent-soft/60"
-                : "border-transparent bg-subtle/70",
-            )}
-          >
-            <header className="shrink-0 flex items-center gap-2 p-2 border-b border-line ">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_HEX[status] }} />
-              <h2 className="font-semibold text-sm flex-1 truncate">{statusLabel(status)}</h2>
-              <span className="text-xs font-semibold tabular-nums text-faint">{orders.length}</span>
-            </header>
-            <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2">
-              {orders.map((order) => (
-                <BoardCard
-                  key={order.order_id}
-                  order={order}
-                  onDragStart={setDragging}
-                  onDragEnd={() => {
-                    setDragging(null)
-                    setOver(null)
-                  }}
-                />
-              ))}
-              {orders.length === 0 && (
-                <span className="text-xs text-faint text-center py-4 border border-dashed border-line rounded-md">
-                  {status === "ENTREGUE" || status === "CANCELADA" ? "Últimos 7 dias" : "Solte aqui"}
-                </span>
+    <div className="h-full flex flex-col">
+      {(hidden > 0 || isAdmin) && (
+        <div className="shrink-0 flex items-center gap-2 px-3 pt-2 text-xs text-faint">
+          {hidden > 0 && (
+            <span>
+              {hidden} OS em status sem coluna no quadro ({missing.map((s) => statusLabel(s)).join(", ")}).
+            </span>
+          )}
+          {isAdmin && (
+            <Link to="/configuracoes/quadro" className="ml-auto inline-flex items-center gap-1 hover:text-fg transition-colors duration-100">
+              <Columns3 size={13} /> Editar colunas
+            </Link>
+          )}
+        </div>
+      )}
+      <div className="flex-1 min-h-0 flex gap-2 overflow-x-auto overflow-y-hidden p-2">
+        {columns.map((col) => {
+          const orders = byColumn.get(col.key) ?? []
+          const isTarget = over === col.key && dragging && columnOf(dragging)?.key !== col.key
+          const final = col.status === "ENTREGUE" || col.status === "CANCELADA"
+          return (
+            <section
+              key={col.key}
+              aria-label={labelOf(col)}
+              onDragOver={(e) => {
+                if (!dragging && !e.dataTransfer.types.includes(DRAG_TYPE)) return
+                e.preventDefault()
+                e.dataTransfer.dropEffect = "move"
+                if (over !== col.key) setOver(col.key)
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver((k) => (k === col.key ? null : k))
+              }}
+              onDrop={(e) => handleDrop(e, col)}
+              className={cn(
+                "w-72 shrink-0 h-full flex flex-col rounded-xl border transition duration-200",
+                isTarget ? "border-accent/50 bg-accent-soft/60" : "border-transparent bg-subtle/70",
               )}
-            </div>
-          </section>
-        )
-      })}
+            >
+              <header className="shrink-0 flex items-center gap-2 p-2 border-b border-line ">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: colorOf(col) }} />
+                <h2 className="font-semibold text-sm flex-1 truncate">{labelOf(col)}</h2>
+                <span className="text-xs font-semibold tabular-nums text-faint">{orders.length}</span>
+              </header>
+              <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2">
+                {orders.map((order) => (
+                  <BoardCard
+                    key={order.order_id}
+                    order={order}
+                    onDragStart={setDragging}
+                    onDragEnd={() => {
+                      setDragging(null)
+                      setOver(null)
+                    }}
+                  />
+                ))}
+                {orders.length === 0 && (
+                  <span className="text-xs text-faint text-center py-4 border border-dashed border-line rounded-md">
+                    {final ? "Últimos 7 dias" : "Solte aqui"}
+                  </span>
+                )}
+              </div>
+            </section>
+          )
+        })}
+      </div>
       {dialog}
     </div>
   )

@@ -8,6 +8,7 @@ import { AuthProvider } from "./contexts/Auth-context"
 import AllRoutes from "./routes/index.routes"
 import { toastError } from "./lib/notify"
 import { TooltipProvider } from "./components/ui/Tooltip"
+import { ErrorBoundary } from "./components/ErrorBoundary"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,7 +58,9 @@ function App() {
           <TooltipProvider>
           <AuthProvider>
             <SidebarContextProvider>
-              <AllRoutes />
+              <ErrorBoundary>
+                <AllRoutes />
+              </ErrorBoundary>
             </SidebarContextProvider>
           </AuthProvider>
           <ThemedToaster />

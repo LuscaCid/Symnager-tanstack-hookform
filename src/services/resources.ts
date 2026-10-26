@@ -127,8 +127,8 @@ export const clientsService = {
 export const ordersService = {
   ...crud<Order, OrderInput>("/orders"),
   board: () => api.get<Partial<Record<OrderStatus, Order[]>>>("/orders/board").then((r) => r.data),
-  setStatus: (id: number, status: OrderStatus, message?: string) =>
-    api.patch<Order>(`/orders/${id}/status`, { status, message }).then((r) => r.data),
+  setStatus: (id: number, status: OrderStatus, message?: string, column?: string | null) =>
+    api.patch<Order>(`/orders/${id}/status`, { status, message, column }).then((r) => r.data),
   addItem: (id: number, item: ItemInput) => api.post<OrderItem>(`/orders/${id}/items`, item).then((r) => r.data),
   updateItem: (id: number, itemId: number, item: Partial<ItemInput>) =>
     api.put<OrderItem>(`/orders/${id}/items/${itemId}`, item).then((r) => r.data),
@@ -196,8 +196,8 @@ export const settingsService = {
 export const segmentsService = {
   list: () => api.get<SegmentSummary[]>("/segments").then((r) => r.data),
   preview: (id: SegmentId) => api.get<SegmentPreview>(`/segments/${id}/preview`).then((r) => r.data),
-  apply: (segment: SegmentId) =>
-    api.post<SegmentPreview & { added: number }>("/segments/apply", { segment }).then((r) => r.data),
+  apply: (segment: SegmentId, replace = false) =>
+    api.post<SegmentPreview & { added: number; removed: number }>("/segments/apply", { segment, replace }).then((r) => r.data),
 }
 
 export type CertificateListItem = Certificate & { client_name?: string; client_phone?: string | null }

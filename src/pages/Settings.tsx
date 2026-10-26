@@ -1,4 +1,4 @@
-import { Award, Briefcase, Building2, ClipboardList, Database, Gauge, Info, KeyRound, Palette, Printer, Server, Settings as SettingsIcon, User } from "lucide-react"
+import { Award, Briefcase, Building2, ClipboardList, Columns3, Database, Gauge, Info, KeyRound, Palette, Printer, Server, Settings as SettingsIcon, User } from "lucide-react"
 import { Navigate, useNavigate, useParams } from "react-router-dom"
 import { Page, PageBody, PageHeader, Panel, Tabs, TabItem } from "@/components/ui"
 import { useHasRole } from "@/contexts/Auth-context"
@@ -15,6 +15,7 @@ import { LicenseSettings } from "@/components/settings/LicenseSettings"
 import { PlanSettings } from "@/components/settings/PlanSettings"
 import { SegmentSettings } from "@/components/settings/SegmentSettings"
 import { CertificateSettings } from "@/components/settings/CertificateSettings"
+import { BoardSettings } from "@/components/settings/BoardSettings"
 import { useSegment } from "@/lib/segment"
 
 type TabKey =
@@ -22,6 +23,7 @@ type TabKey =
   | "empresa"
   | "ramo"
   | "ordens"
+  | "quadro"
   | "certificados"
   | "impressao"
   | "conexao"
@@ -57,6 +59,7 @@ export default function Settings() {
     { key: "empresa", label: "Empresa", icon: Building2 },
     { key: "ramo", label: "Ramo", icon: Briefcase, hidden: !isAdmin },
     { key: "ordens", label: "Ordens de serviço", icon: ClipboardList, hidden: !isAdmin },
+    { key: "quadro", label: "Quadro", icon: Columns3, hidden: !isAdmin },
     { key: "certificados", label: "Certificados", icon: Award, hidden: !isAdmin || certificateTypes.length === 0 },
     { key: "impressao", label: "Impressão", icon: Printer },
     { key: "conexao", label: "Conexão", icon: Server },
@@ -73,7 +76,7 @@ export default function Settings() {
 
   return (
     <Page>
-      <PageHeader icon={SettingsIcon} title="Configurações" subtitle="Perfil, empresa, ramo, impressão, conexão, backup, plano e licença" />
+      <PageHeader icon={SettingsIcon} title="Configurações" subtitle="Perfil, empresa, ramo, quadro, impressão, conexão, backup, plano e licença" />
       <Tabs tabs={tabs} value={current} onChange={(key) => navigate(`/configuracoes/${key}`)} />
       <PageBody>
         <div className="max-w-3xl mx-auto w-full">
@@ -81,6 +84,7 @@ export default function Settings() {
           {current === "empresa" && <CompanySettings />}
           {current === "ramo" && <SegmentSettings />}
           {current === "ordens" && <OrdersSettings />}
+          {current === "quadro" && <BoardSettings />}
           {current === "certificados" && <CertificateSettings />}
           {current === "impressao" && <PrintSettings />}
           {current === "conexao" && <ConnectionTab />}

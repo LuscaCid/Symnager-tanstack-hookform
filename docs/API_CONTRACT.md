@@ -143,7 +143,7 @@ type OrderHistory = { history_id, order_id, type: 'CREATED'|'STATUS'|'COMMENT'|'
 | POST | `/orders` | `{ owner_id, device, description, device_type?, brand?, model?, serial?, accessories?, condition?, device_password?, service_address?, scheduled_at?, custom_fields?, checklist?, priority?, technician_id?, due_date?, warranty_days?, tags?: string[], items?: ItemInput[] }` — TECNICO só altera diagnosis, solution, internal_notes, serial, condition, checklist e custom_fields |
 | GET | `/orders/:id` | completo (items, payments, history, failures) |
 | PUT | `/orders/:id` | parcial dos campos editáveis (não muda status) |
-| PATCH | `/orders/:id/status` | `{ status, message? }` — registra history; `PRONTA` seta `finished_at`; `ENTREGUE` seta `delivered_at` e `warranty_until` |
+| PATCH | `/orders/:id/status` | `{ status, message?, column? }` — `column` = chave de `settings.board.columns` com o mesmo status (400 se não existir); com o mesmo status só move o cartão de coluna; sem `column`, `board_column` volta a null. Registra history; `PRONTA` seta `finished_at`; `ENTREGUE` seta `delivered_at` e `warranty_until` |
 | DELETE | `/orders/:id` | ADMIN — remove definitivamente (devolve estoque) |
 | POST | `/orders/:id/items` | `ItemInput = { kind, service_id?, product_id?, description?, quantity, unit_price? }` — PRODUCT baixa estoque; recalcula totais |
 | PUT | `/orders/:id/items/:itemId` | parcial; ajusta estoque pela diferença |
@@ -246,11 +246,15 @@ Chaves conhecidas:
              on_site: boolean | null /* null = padrão do ramo */ },
   certificates: { prefix: 'CERT', responsible_name, responsible_registry, hygiene_months: 6, preventive_months: 3,
                   notes /* rodapé */, show_qrcode: true },
+  board: { columns: { key /* ^[a-z0-9_]{1,30}$ */, label /* '' = nome do status */, color /* '#rrggbb' | '' */,
+                      status: OrderStatus }[] /* 1 a 20; padrão = uma por status */ },
   segment_profile: SegmentProfile   // somente leitura: perfil completo do ramo ativo (ver "Ramos de atuação")
 }
 ```
 PUT aceita `segment: { custom_fields?, on_site? }` (o ramo em si só muda por `POST /segments/apply`). `custom_fields` vai sempre
 completo (substitui); remover um campo já salvo → 400 (desative com `active: false`); mudar o tipo → 400.
+`board.columns` também vai sempre completo (ordem = ordem do quadro); chave repetida → 400. A OS aparece na coluna
+`order.board_column` quando ela existe e tem o mesmo status; senão, na primeira coluna do status (status sem coluna não aparece no quadro).
 
 ## Consulta pública (`/api/public`)
 | GET | `/public/track/:code` (pública, rate-limit) | `{ number, status, device, arrived_at, finished_at, delivered_at, scheduled_at, equipment_label, status_label, company: { name, phone } }` — nada sensível (sem endereço) |
@@ -294,8 +298,8 @@ type CustomFieldDef = { key, label, type: 'text'|'number'|'select'|'date'|'boole
 | Método | Rota | Notas |
 |---|---|---|
 | GET | `/segments` | público (tela de configuração inicial) → `[{ id, name, short_name, description, features }]` |
-| GET | `/segments/:id/preview` | ADMIN → `{ from, to, add: { KIND: string[] } }` (itens que faltam nas listas) |
-| POST | `/segments/apply` | ADMIN `{ segment }` → `{ from, to, add, added }`; só acrescenta itens nas listas e troca `segment.id` |
+| GET | `/segments/:id/preview` | ADMIN → `{ from, to, add: { KIND: string[] }, remove: { KIND: number }, replace_with: { KIND: string[] } }` (`add` = itens que faltam; `remove`/`replace_with` = o que muda com `replace`) |
+| POST | `/segments/apply` | ADMIN `{ segment, replace? }` → `{ from, to, add, added, removed }`; sem `replace` só acrescenta itens nas listas; com `replace: true` apaga antes os itens de DEVICE_TYPE, BRAND, ACCESSORY, CHECKLIST e FAILURE_REASON (formas de pagamento ficam) e deixa só os do ramo. Aceita o ramo atual (recarregar listas). Auditoria `SEGMENT_APPLY`/`SEGMENT_REPLACE` |
 
 `POST /auth/setup` aceita `segment?` (sem ele vale `DEFAULT_SEGMENT` da API, vindo do instalador).
 O app mostra o local/agenda quando `settings.segment.on_site ?? segment_profile.features.on_site`.

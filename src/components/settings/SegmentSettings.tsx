@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeftRight, Briefcase, Eye, EyeOff, ListPlus, Plus, Printer, Save, Store } from "lucide-react"
+import { ArrowLeftRight, Briefcase, Eye, EyeOff, ListPlus, ListRestart, Plus, Printer, Save, Store } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import type { CustomFieldDef, CustomFieldType, LookupKind, SegmentId, SegmentPreview } from "@/@types/api"
@@ -42,7 +42,7 @@ type Draft = CustomFieldDef & { optionsText: string; isNew?: boolean }
 
 const toDraft = (f: CustomFieldDef): Draft => ({ ...f, active: f.active !== false, optionsText: (f.options ?? []).join(", ") })
 
-/** Troca de ramo: prévia do que entra nas listas e confirmação (nada é removido). */
+/** Troca de ramo: prévia do que entra nas listas, opção de apagar os itens atuais e confirmação. */
 function SegmentPicker() {
   const queryClient = useQueryClient()
   const segment = useSegment()
@@ -50,6 +50,7 @@ function SegmentPicker() {
   const list = useQuery({ queryKey: ["segments"], queryFn: segmentsService.list, staleTime: Infinity })
   const [target, setTarget] = useState<SegmentId | null>(null)
   const [preview, setPreview] = useState<SegmentPreview | null>(null)
+  const [replace, setReplace] = useState(false)
 
   const loadPreview = useMutation({
     mutationFn: (id: SegmentId) => segmentsService.preview(id),
@@ -61,26 +62,36 @@ function SegmentPicker() {
   })
 
   const apply = useMutation({
-    mutationFn: (id: SegmentId) => segmentsService.apply(id),
+    mutationFn: (id: SegmentId) => segmentsService.apply(id, replace),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["settings"] })
       queryClient.invalidateQueries({ queryKey: ["lookups"] })
       const name = list.data?.find((s) => s.id === res.to)?.name ?? res.to
-      toast.success(`Ramo alterado para ${name}.`, {
-        description: res.added ? `${res.added} item(ns) adicionado(s) aos cadastros auxiliares.` : "As listas já tinham tudo o que o ramo precisa.",
+      toast.success(res.from === res.to ? "Listas do ramo atualizadas." : `Ramo alterado para ${name}.`, {
+        description: res.removed
+          ? `${res.removed} item(ns) antigo(s) apagado(s) e ${res.added} do novo ramo adicionado(s).`
+          : res.added
+            ? `${res.added} item(ns) adicionado(s) aos cadastros auxiliares.`
+            : "As listas já tinham tudo o que o ramo precisa.",
       })
       setTarget(null)
       setPreview(null)
     },
   })
 
-  function choose(id: SegmentId) {
+  function choose(id: SegmentId, clean = false) {
     setTarget(id)
     setPreview(null)
+    setReplace(clean)
     loadPreview.mutate(id)
   }
 
   const additions = Object.entries(preview?.add ?? {}) as [LookupKind, string[]][]
+  const replacements = Object.entries(preview?.replace_with ?? {}) as [LookupKind, string[]][]
+  const removals = Object.entries(preview?.remove ?? {}) as [LookupKind, number][]
+  const removeTotal = removals.reduce((n, [, count]) => n + count, 0)
+  // API anterior a esta opção: não manda o que seria apagado
+  const canReplace = !!preview?.replace_with
   const targetName = list.data?.find((s) => s.id === target)?.name
 
   return (
@@ -89,10 +100,20 @@ function SegmentPicker() {
         <div className="rounded-lg bg-accent-soft px-3 py-2.5">
           <p className="text-sm font-semibold text-accent">{segment.profile.name}</p>
           <p className="text-[13px] text-muted">{segment.profile.description}</p>
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={ListRestart}
+            className="mt-1.5 -ml-2"
+            loading={loadPreview.isPending && target === current}
+            onClick={() => choose(current, true)}
+          >
+            Deixar só as listas deste ramo
+          </Button>
         </div>
         <p className="text-[13px] text-muted">
-          O ramo define os nomes e os campos da OS, as mensagens ao cliente e as listas iniciais (tipos, marcas, checklist). Trocar de
-          ramo só acrescenta itens às listas: nada do que já existe é apagado.
+          O ramo define os nomes e os campos da OS, as mensagens ao cliente e as listas iniciais (tipos, marcas, checklist). Ao trocar,
+          você escolhe se mantém os itens atuais das listas junto com os do novo ramo ou se apaga os atuais e fica só com os novos.
         </p>
         {list.isLoading ? (
           <SkeletonForm fields={2} columns={2} />
@@ -129,28 +150,51 @@ function SegmentPicker() {
             setPreview(null)
           }
         }}
-        tone="default"
-        title={`Trocar para ${targetName ?? "o novo ramo"}?`}
-        confirmLabel="Trocar ramo"
+        tone={replace ? "danger" : "default"}
+        title={target === current ? "Recarregar as listas deste ramo?" : `Trocar para ${targetName ?? "o novo ramo"}?`}
+        confirmLabel={target === current ? (replace ? "Apagar e recarregar" : "Completar listas") : replace ? "Apagar e trocar ramo" : "Trocar ramo"}
         loading={apply.isPending}
         onConfirm={() => {
           if (target) apply.mutate(target)
         }}
         description={
           <span className="flex flex-col gap-2 mt-1">
-            {additions.length ? (
+            {canReplace && (
+              <span className="block rounded-lg border border-line p-2.5">
+                <Checkbox
+                  label="Apagar os itens atuais das listas e ficar só com os do novo ramo"
+                  checked={replace}
+                  onChange={(e) => setReplace(e.target.checked)}
+                />
+                <span className="block text-xs text-faint mt-1 pl-6">
+                  Tipos de equipamento, marcas, acessórios, checklist e motivos de falha
+                  {removeTotal > 0 ? ` (${removeTotal} item(ns) hoje)` : ""}. Formas de pagamento são mantidas. As OS já criadas não mudam.
+                </span>
+              </span>
+            )}
+            {replace ? (
+              <>
+                <span>Os itens atuais serão apagados e as listas ficarão assim:</span>
+                {replacements.map(([kind, names]) => (
+                  <span key={kind} className="block text-[13px]">
+                    <strong className="font-medium text-fg">{LOOKUP_LABEL[kind] ?? kind}:</strong> {names.length ? names.join(", ") : "nenhum item"}
+                  </span>
+                ))}
+                <span className="text-danger text-[13px]">Os itens apagados não podem ser recuperados (exceto por um backup).</span>
+              </>
+            ) : additions.length ? (
               <>
                 <span>Estes itens serão adicionados aos cadastros auxiliares:</span>
                 {additions.map(([kind, names]) => (
                   <span key={kind} className="block text-[13px]">
-                    <strong className="font-medium text-fg">{LOOKUP_LABEL[kind] ?? kind}:</strong> {names.join(", ")}
+                    <strong className="font-medium text-fg">{LOOKUP_LABEL[kind] ?? kind}:</strong> {names.length ? names.join(", ") : "nenhum item"}
                   </span>
                 ))}
+                <span className="text-faint">Nada será removido. Itens que você não usar podem ser desativados em Cadastros auxiliares.</span>
               </>
             ) : (
               <span>As listas já têm todos os itens deste ramo.</span>
             )}
-            <span className="text-faint">Nada será removido. Itens que você não usar podem ser desativados em Cadastros auxiliares.</span>
           </span>
         }
       />

@@ -187,6 +187,8 @@ export interface Order {
   scheduled_at?: string | null
   /** campos do ramo (btu, gas...) e da empresa (cf_...) */
   custom_fields?: CustomFieldValues
+  /** coluna personalizada do quadro; null = primeira coluna do status */
+  board_column?: string | null
   arrived_at: string
   due_date: string | null
   finished_at: string | null
@@ -362,6 +364,7 @@ export interface Settings {
   print: { layout: 'A4' | 'THERMAL'; copies: number; show_qrcode: boolean; show_prices: boolean }
   segment?: SegmentSettings
   certificates?: CertificateSettings
+  board?: BoardSettings
   /** somente leitura: perfil completo do ramo ativo */
   segment_profile?: SegmentProfile
   /** somente leitura: assinatura do produto enviada pela API (PUT recusa) */
@@ -377,6 +380,22 @@ export interface SettingsUpdate {
   print?: Partial<Settings['print']>
   segment?: Partial<Pick<SegmentSettings, 'custom_fields' | 'on_site'>>
   certificates?: Partial<CertificateSettings>
+  board?: Partial<BoardSettings>
+}
+
+/** Coluna do quadro: cada uma leva a OS para um status do sistema. */
+export interface BoardColumn {
+  /** estável; gravado em order.board_column */
+  key: string
+  /** vazio = nome do status no ramo */
+  label: string
+  /** #rrggbb; vazio = cor do status */
+  color: string
+  status: OrderStatus
+}
+
+export interface BoardSettings {
+  columns: BoardColumn[]
 }
 
 /** Situação da licença (GET /license, público). */
@@ -468,7 +487,8 @@ export interface AuditLog {
   entity: string
   entity_id: string | null
   ip: string | null
-  meta: string | null
+  /** objeto (API atual) ou JSON em texto (versões antigas) */
+  meta: Record<string, unknown> | string | null
   created_at: string
 }
 
@@ -592,6 +612,10 @@ export interface SegmentPreview {
   from: SegmentId
   to: SegmentId
   add: Partial<Record<LookupKind, string[]>>
+  /** quantos itens cada lista tem hoje (removidos com "apagar") */
+  remove?: Partial<Record<LookupKind, number>>
+  /** listas completas do novo ramo (o que fica com "apagar") */
+  replace_with?: Partial<Record<LookupKind, string[]>>
 }
 
 export interface SegmentSettings {
