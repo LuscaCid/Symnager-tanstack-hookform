@@ -22,6 +22,8 @@ services:
       TRUST_PROXY: "true"
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       RUN_MIGRATIONS: "true"
+      # ramo padrão na configuração inicial (o app pode escolher outro)
+      DEFAULT_SEGMENT: ${SYMNAGER_SEGMENT:-CELULAR_INFORMATICA}
     volumes:
       - symnager-data:/data
     # a API só é acessível pela rede interna (via nginx)
@@ -43,6 +45,8 @@ services:
   web:
     build:
       context: .
+      args:
+        VITE_SYMNAGER_SEGMENT: ${SYMNAGER_SEGMENT:-CELULAR_INFORMATICA}
     image: symnager-web:latest
     restart: unless-stopped
     depends_on:

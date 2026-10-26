@@ -4,7 +4,8 @@ import { toast } from "sonner"
 import type { Order, OrderStatus } from "@/@types/api"
 import { ConfirmDialog, TextAreaField } from "@/components/ui"
 import { useHasRole } from "@/contexts/Auth-context"
-import { formatMoney, formatOrderNumber, STATUS_LABEL } from "@/lib/format"
+import { formatMoney, formatOrderNumber } from "@/lib/format"
+import { useSegment } from "@/lib/segment"
 import { ordersService } from "@/services/resources"
 import { balanceOf, isFinal } from "./orderUtils"
 
@@ -19,6 +20,7 @@ interface Pending {
 /** Troca de status com as regras de negócio: aviso de saldo ao entregar, motivo ao cancelar, reabertura só para ADMIN. */
 export function useStatusChange() {
   const queryClient = useQueryClient()
+  const { statusLabel } = useSegment()
   const isAdmin = useHasRole()
   const [pending, setPending] = useState<Pending | null>(null)
   const [message, setMessage] = useState("")
@@ -44,7 +46,7 @@ export function useStatusChange() {
       if (ctx?.previous) queryClient.setQueryData(["orders", "board"], ctx.previous)
     },
     onSuccess: (_data, { order, status }) => {
-      toast.success(`${formatOrderNumber(order.number)} → ${STATUS_LABEL[status]}`)
+      toast.success(`${formatOrderNumber(order.number)} → ${statusLabel(status)}`)
     },
     onSettled: (_data, _err, { order }) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] })

@@ -19,17 +19,18 @@ import {
 } from "@/components/ui"
 import { lookupsService } from "@/services/resources"
 import { useHasRole } from "@/contexts/Auth-context"
-import { LOOKUP_LABEL } from "@/lib/format"
+import { type SegmentApi, useSegment } from "@/lib/segment"
 import { cn } from "@/lib/cn"
 
-const HINTS: Record<LookupKind, string> = {
-  DEVICE_TYPE: "Aparecem no campo “Tipo de equipamento” da nova OS e agrupam os gráficos do dashboard e das falhas.",
-  BRAND: "Sugestões do campo “Marca” na abertura da OS; usadas no ranking de marcas e no mapeamento de falhas.",
+/** Dicas de cada lista com os nomes dos campos no ramo da empresa. */
+const hints = ({ label }: SegmentApi): Record<LookupKind, string> => ({
+  DEVICE_TYPE: `Aparecem no campo “${label("device_type")}” da nova OS e agrupam os gráficos do dashboard e das falhas.`,
+  BRAND: `Sugestões do campo “${label("brand")}” na abertura da OS; usadas no ranking e no mapeamento de falhas.`,
   PAYMENT_METHOD: "Opções ao registrar um pagamento na OS e no relatório de faturamento.",
   FAILURE_REASON: "Motivos ao registrar uma falha de entrega ou retorno — alimentam o mapeamento de falhas.",
-  ACCESSORY: "Sugestões do campo “Acessórios entregues” (carregador, capa, cabo...).",
-  CHECKLIST: "Itens conferidos na entrada do equipamento (liga, tela, botões, câmera...).",
-}
+  ACCESSORY: `Sugestões do campo “${label("accessories")}”.`,
+  CHECKLIST: `Itens conferidos no “${label("checklist")}” da OS.`,
+})
 
 function LookupRow({
   item,
@@ -126,6 +127,7 @@ function LookupRow({
 
 function LookupList({ kind, canWrite }: { kind: LookupKind; canWrite: boolean }) {
   const queryClient = useQueryClient()
+  const segment = useSegment()
   const [name, setName] = useState("")
   const [toDelete, setToDelete] = useState<Lookup | null>(null)
 
@@ -186,7 +188,7 @@ function LookupList({ kind, canWrite }: { kind: LookupKind; canWrite: boolean })
 
   return (
     <div className="flex flex-col gap-3 max-w-2xl">
-      <p className="text-[13px] text-muted bg-subtle/60 rounded-lg px-3 py-2">{HINTS[kind]}</p>
+      <p className="text-[13px] text-muted bg-subtle/60 rounded-lg px-3 py-2">{hints(segment)[kind]}</p>
       {canWrite && (
         <form onSubmit={submit} className="flex gap-2">
           <label htmlFor={`new-${kind}`} className="sr-only">
@@ -243,6 +245,7 @@ function LookupList({ kind, canWrite }: { kind: LookupKind; canWrite: boolean })
 
 export default function Lookups() {
   const canWrite = useHasRole("ATENDENTE")
+  const { lookupLabel } = useSegment()
   const [params, setParams] = useSearchParams()
   const kindParam = params.get("tipo") as LookupKind | null
   const kind: LookupKind = kindParam && LOOKUP_KINDS.includes(kindParam) ? kindParam : "DEVICE_TYPE"
@@ -251,7 +254,7 @@ export default function Lookups() {
     <Page>
       <PageHeader icon={ListChecks} title="Cadastros auxiliares" subtitle="Listas usadas nos formulários e relatórios" />
       <Tabs
-        tabs={LOOKUP_KINDS.map((k) => ({ key: k, label: LOOKUP_LABEL[k] }))}
+        tabs={LOOKUP_KINDS.map((k) => ({ key: k, label: lookupLabel(k) }))}
         value={kind}
         onChange={(k) => setParams({ tipo: k }, { replace: true })}
       />

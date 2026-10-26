@@ -1,4 +1,4 @@
-import { Building2, ClipboardList, Database, Gauge, Info, KeyRound, Palette, Printer, Server, Settings as SettingsIcon, User } from "lucide-react"
+import { Award, Briefcase, Building2, ClipboardList, Database, Gauge, Info, KeyRound, Palette, Printer, Server, Settings as SettingsIcon, User } from "lucide-react"
 import { Navigate, useNavigate, useParams } from "react-router-dom"
 import { Page, PageBody, PageHeader, Panel, Tabs, TabItem } from "@/components/ui"
 import { useHasRole } from "@/contexts/Auth-context"
@@ -13,8 +13,23 @@ import { AppearanceSettings } from "@/components/settings/AppearanceSettings"
 import { AboutSettings } from "@/components/settings/AboutSettings"
 import { LicenseSettings } from "@/components/settings/LicenseSettings"
 import { PlanSettings } from "@/components/settings/PlanSettings"
+import { SegmentSettings } from "@/components/settings/SegmentSettings"
+import { CertificateSettings } from "@/components/settings/CertificateSettings"
+import { useSegment } from "@/lib/segment"
 
-type TabKey = "perfil" | "empresa" | "ordens" | "impressao" | "conexao" | "backup" | "aparencia" | "plano" | "licenca" | "sobre"
+type TabKey =
+  | "perfil"
+  | "empresa"
+  | "ramo"
+  | "ordens"
+  | "certificados"
+  | "impressao"
+  | "conexao"
+  | "backup"
+  | "aparencia"
+  | "plano"
+  | "licenca"
+  | "sobre"
 
 function ConnectionTab() {
   return (
@@ -35,11 +50,14 @@ export default function Settings() {
   const { tab } = useParams()
   const navigate = useNavigate()
   const isAdmin = useHasRole()
+  const { certificateTypes } = useSegment()
 
   const tabs: TabItem<TabKey>[] = [
     { key: "perfil", label: "Perfil", icon: User },
     { key: "empresa", label: "Empresa", icon: Building2 },
+    { key: "ramo", label: "Ramo", icon: Briefcase, hidden: !isAdmin },
     { key: "ordens", label: "Ordens de serviço", icon: ClipboardList, hidden: !isAdmin },
+    { key: "certificados", label: "Certificados", icon: Award, hidden: !isAdmin || certificateTypes.length === 0 },
     { key: "impressao", label: "Impressão", icon: Printer },
     { key: "conexao", label: "Conexão", icon: Server },
     { key: "backup", label: "Backup", icon: Database, hidden: !isAdmin },
@@ -55,13 +73,15 @@ export default function Settings() {
 
   return (
     <Page>
-      <PageHeader icon={SettingsIcon} title="Configurações" subtitle="Perfil, empresa, impressão, conexão, backup, plano e licença" />
+      <PageHeader icon={SettingsIcon} title="Configurações" subtitle="Perfil, empresa, ramo, impressão, conexão, backup, plano e licença" />
       <Tabs tabs={tabs} value={current} onChange={(key) => navigate(`/configuracoes/${key}`)} />
       <PageBody>
         <div className="max-w-3xl mx-auto w-full">
           {current === "perfil" && <ProfileSettings />}
           {current === "empresa" && <CompanySettings />}
+          {current === "ramo" && <SegmentSettings />}
           {current === "ordens" && <OrdersSettings />}
+          {current === "certificados" && <CertificateSettings />}
           {current === "impressao" && <PrintSettings />}
           {current === "conexao" && <ConnectionTab />}
           {current === "backup" && <BackupSettings />}

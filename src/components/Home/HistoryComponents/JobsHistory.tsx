@@ -9,7 +9,7 @@ export default function JobsHistory () {
       <SearchInput
         value={query}
         onChange={setQuery}
-        placeholder="Pesquisar por cliente, equipamento, defeito ou nº da OS"
+        placeholder="Pesquisar por cliente, equipamento, descrição ou nº da OS"
       />
       <div className="flex-1 min-h-0 overflow-y-auto w-full flex flex-col gap-2 pb-4 -mx-1 px-1">
         <HistoryFetchAndRendering query={query}/>

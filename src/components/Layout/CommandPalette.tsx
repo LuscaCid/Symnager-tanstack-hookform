@@ -7,7 +7,8 @@ import { NAVIGATION } from "./navigation"
 import { useDebounce } from "@/lib/hooks"
 import { clientsService, ordersService } from "@/services/resources"
 import { useCurrentUser } from "@/contexts/Auth-context"
-import { formatOrderNumber, STATUS_LABEL } from "@/lib/format"
+import { formatOrderNumber } from "@/lib/format"
+import { useSegment } from "@/lib/segment"
 import { cn } from "@/lib/cn"
 import type { LucideIcon } from "lucide-react"
 
@@ -29,6 +30,7 @@ const normalize = (s: string) =>
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const navigate = useNavigate()
   const user = useCurrentUser()
+  const { statusLabel } = useSegment()
   const [query, setQuery] = useState("")
   const [active, setActive] = useState(0)
   const debounced = useDebounce(query.trim(), 250)
@@ -59,7 +61,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     const orderEntries: Entry[] = (orders.data?.data ?? []).map((o) => ({
       id: `o${o.order_id}`,
       label: `${formatOrderNumber(o.number)} · ${o.device}`,
-      hint: `${o.owner?.name ?? ""} · ${STATUS_LABEL[o.status]}`,
+      hint: `${o.owner?.name ?? ""} · ${statusLabel(o.status)}`,
       icon: ClipboardList,
       to: `/ordens/${o.order_id}`,
     }))
@@ -71,7 +73,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       to: `/clientes/${c.client_id}`,
     }))
     return [...orderEntries, ...clientEntries, ...nav]
-  }, [query, orders.data, clients.data, user])
+  }, [query, orders.data, clients.data, user, statusLabel])
 
   function go(entry: Entry | undefined) {
     if (!entry) return

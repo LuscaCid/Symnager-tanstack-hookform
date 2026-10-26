@@ -4,21 +4,22 @@ import { CheckCircle2, Circle, Search } from "lucide-react"
 import { FormEvent, useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import axios from "axios"
-import { Button, StatusBadge, TextField } from "@/components/ui"
+import { Badge, Button, TextField } from "@/components/ui"
 import { trackService } from "@/services/resources"
 import { setApiBaseUrl } from "@/service/api"
 import { resolveApiBaseUrl } from "@/lib/runtime"
-import { formatDateTime, formatOrderNumber, formatPhone } from "@/lib/format"
+import { formatDateTime, formatOrderNumber, formatPhone, STATUS_COLOR, STATUS_HEX, STATUS_LABEL } from "@/lib/format"
 import { cn } from "@/lib/cn"
 import { AuthShell } from "./auth/AuthShell"
 import type { OrderStatus } from "@/@types/api"
 
-const STEPS: { label: string; statuses: OrderStatus[] }[] = [
+// Etapas neutras para qualquer ramo; atendimento no local termina em "Concluído", balcão em "Pronto para retirada".
+const steps = (onSite: boolean): { label: string; statuses: OrderStatus[] }[] => [
   { label: "Recebido", statuses: ["ABERTA"] },
   { label: "Em análise", statuses: ["EM_ANALISE", "AGUARDANDO_APROVACAO", "APROVADA"] },
-  { label: "Em reparo", statuses: ["AGUARDANDO_PECA", "EM_REPARO"] },
-  { label: "Pronto para retirada", statuses: ["PRONTA"] },
-  { label: "Entregue", statuses: ["ENTREGUE"] },
+  { label: "Em execução", statuses: ["AGUARDANDO_PECA", "EM_REPARO"] },
+  { label: onSite ? "Concluído" : "Pronto para retirada", statuses: ["PRONTA"] },
+  { label: onSite ? "Finalizado" : "Entregue", statuses: ["ENTREGUE"] },
 ]
 
 /** Consulta pública do andamento da OS pelo código impresso no comprovante (QR code). */
@@ -49,6 +50,7 @@ export default function Track() {
   }
 
   const notFound = axios.isAxiosError(error) && error.response?.status === 404
+  const STEPS = steps(!!data?.scheduled_at)
   const currentStep = data ? STEPS.findIndex((s) => s.statuses.includes(data.status)) : -1
 
   return (
@@ -77,9 +79,15 @@ export default function Track() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <strong className="block text-lg">{formatOrderNumber(data.number)}</strong>
-              <span className="text-sm text-muted ">{data.device}</span>
+              <span className="text-sm text-muted ">
+                {data.equipment_label ? `${data.equipment_label}: ` : ""}
+                {data.device}
+              </span>
             </div>
-            <StatusBadge status={data.status} />
+            <Badge className={STATUS_COLOR[data.status]}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_HEX[data.status] }} />
+              {data.status_label || STATUS_LABEL[data.status]}
+            </Badge>
           </div>
           {data.status === "CANCELADA" ? (
             <p className="text-sm">Esta ordem de serviço foi cancelada. Entre em contato para mais informações.</p>
@@ -99,6 +107,12 @@ export default function Track() {
           <dl className="text-sm grid grid-cols-2 gap-1 border-t border-line pt-2">
             <dt className="text-faint">Entrada</dt>
             <dd>{formatDateTime(data.arrived_at)}</dd>
+            {data.scheduled_at && (
+              <>
+                <dt className="text-faint">Visita agendada</dt>
+                <dd>{formatDateTime(data.scheduled_at)}</dd>
+              </>
+            )}
             {data.finished_at && (
               <>
                 <dt className="text-faint">Concluído</dt>

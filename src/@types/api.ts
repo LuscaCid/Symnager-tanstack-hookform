@@ -126,7 +126,7 @@ export interface Payment {
 export interface OrderHistory {
   history_id: number
   order_id: number
-  type: 'CREATED' | 'STATUS' | 'COMMENT' | 'ITEM' | 'PAYMENT' | 'FAILURE' | 'UPDATE' | 'PRINT'
+  type: 'CREATED' | 'STATUS' | 'COMMENT' | 'ITEM' | 'PAYMENT' | 'FAILURE' | 'UPDATE' | 'PRINT' | 'SCHEDULE' | 'CERTIFICATE'
   from_status: string | null
   to_status: string | null
   message: string | null
@@ -182,6 +182,11 @@ export interface Order {
   solution: string | null
   internal_notes: string | null
   checklist?: ChecklistEntry[] | null
+  /** atendimento no local (ramos com visita) */
+  service_address?: string | null
+  scheduled_at?: string | null
+  /** campos do ramo (btu, gas...) e da empresa (cf_...) */
+  custom_fields?: CustomFieldValues
   arrived_at: string
   due_date: string | null
   finished_at: string | null
@@ -224,7 +229,12 @@ export interface OrderInput {
   internal_notes?: string | null
   discount?: number
   checklist?: ChecklistEntry[]
+  service_address?: string | null
+  scheduled_at?: string | null
+  custom_fields?: CustomFieldValues | null
 }
+
+export type CustomFieldValues = Record<string, string | number | boolean | null>
 
 export interface Service {
   service_id: number
@@ -350,10 +360,23 @@ export interface Settings {
   /** public_url: endereço web onde /rastreio fica acessível aos clientes (vazio = QR mostra só o código) */
   orders: { prefix: string; default_warranty_days: number; terms: string; require_technician: boolean; public_url?: string }
   print: { layout: 'A4' | 'THERMAL'; copies: number; show_qrcode: boolean; show_prices: boolean }
+  segment?: SegmentSettings
+  certificates?: CertificateSettings
+  /** somente leitura: perfil completo do ramo ativo */
+  segment_profile?: SegmentProfile
   /** somente leitura: assinatura do produto enviada pela API (PUT recusa) */
   app?: { name: string; developer: string; version: string }
   /** somente leitura: situação da licença desta instalação */
   license?: LicenseStatus
+}
+
+/** Corpo do PUT /settings: merge parcial por seção (ramo: só campos adicionais e atendimento no local). */
+export interface SettingsUpdate {
+  company?: Partial<CompanySettings>
+  orders?: Partial<Settings['orders']>
+  print?: Partial<Settings['print']>
+  segment?: Partial<Pick<SegmentSettings, 'custom_fields' | 'on_site'>>
+  certificates?: Partial<CertificateSettings>
 }
 
 /** Situação da licença (GET /license, público). */
@@ -456,6 +479,11 @@ export interface TrackInfo {
   arrived_at: string
   finished_at: string | null
   delivered_at: string | null
+  scheduled_at?: string | null
+  /** rótulo do campo "equipamento" no ramo da empresa */
+  equipment_label?: string
+  /** rótulo do status no ramo (null = padrão) */
+  status_label?: string | null
   company: { name: string; phone: string }
 }
 
@@ -465,4 +493,204 @@ export interface Health {
   db: string
   mode: string
   time: string
+}
+
+// ---------------------------------------------------------------- ramos de atuação
+
+export const SEGMENT_IDS = ['CELULAR_INFORMATICA', 'AR_CONDICIONADO', 'ELETRODOMESTICOS', 'SERVICOS_GERAIS'] as const
+export type SegmentId = (typeof SEGMENT_IDS)[number]
+
+export type CertificateType = 'HIGIENIZACAO' | 'MANUTENCAO_PREVENTIVA'
+export type FieldMode = 'required' | 'optional' | 'hidden'
+export type OrderFieldKey =
+  | 'device_type'
+  | 'brand'
+  | 'model'
+  | 'serial'
+  | 'accessories'
+  | 'condition'
+  | 'device_password'
+  | 'checklist'
+  | 'service_address'
+  | 'scheduled_at'
+export type CustomFieldType = 'text' | 'number' | 'select' | 'date' | 'boolean'
+
+/** Campo adicional da OS (do ramo ou da empresa). Valor em order.custom_fields[key]. */
+export interface CustomFieldDef {
+  key: string
+  label: string
+  type: CustomFieldType
+  options?: string[]
+  unit?: string
+  show_on_reception?: boolean
+  show_on_print?: boolean
+  active?: boolean
+}
+
+export interface SegmentLabels {
+  equipment: string
+  equipment_plural: string
+  device: string
+  device_placeholder: string
+  device_type: string
+  brand: string
+  model: string
+  model_placeholder: string
+  serial: string
+  accessories: string
+  condition: string
+  condition_placeholder: string
+  device_password: string
+  description: string
+  description_placeholder: string
+  diagnosis: string
+  solution: string
+  checklist: string
+  service_address: string
+  scheduled_at: string
+  business: string
+  top_types: string
+  turnaround: string
+}
+
+export interface CertificateTemplate {
+  title: string
+  checklist: string[]
+  products_hint?: string
+  measurements?: boolean
+  months_setting: 'hygiene_months' | 'preventive_months'
+  disclaimer?: boolean
+}
+
+export interface SegmentProfile {
+  id: SegmentId
+  name: string
+  short_name: string
+  description: string
+  labels: SegmentLabels
+  fields: Record<OrderFieldKey, FieldMode>
+  status_labels: Partial<Record<OrderStatus, string>>
+  lookup_labels: Partial<Record<LookupKind, string>>
+  messages: { subject: string; status: Partial<Record<OrderStatus, string>>; scheduled: string }
+  equipment_fields: CustomFieldDef[]
+  features: { on_site: boolean; certificates: CertificateType[] }
+  certificate_templates: Partial<Record<CertificateType, CertificateTemplate>>
+  defaults: { warranty_days: number }
+  seeds?: Record<string, string[]>
+}
+
+/** GET /segments (público). */
+export interface SegmentSummary {
+  id: SegmentId
+  name: string
+  short_name: string
+  description: string
+  features: SegmentProfile['features']
+}
+
+export interface SegmentPreview {
+  from: SegmentId
+  to: SegmentId
+  add: Partial<Record<LookupKind, string[]>>
+}
+
+export interface SegmentSettings {
+  id: SegmentId
+  applied: SegmentId[]
+  custom_fields: CustomFieldDef[]
+  /** null = padrão do ramo */
+  on_site: boolean | null
+}
+
+export interface CertificateSettings {
+  prefix: string
+  responsible_name: string
+  responsible_registry: string
+  hygiene_months: number
+  preventive_months: number
+  notes: string
+  show_qrcode: boolean
+}
+
+// ---------------------------------------------------------------- certificados
+
+export interface CertificateEquipment {
+  device: string
+  device_type?: string | null
+  brand?: string | null
+  model?: string | null
+  serial?: string | null
+  btu?: string | null
+  gas?: string | null
+  tensao?: string | null
+  ambiente?: string | null
+}
+
+export interface CertificateProduct {
+  name: string
+  registry?: string | null
+  batch?: string | null
+}
+
+export interface CertificateMeasurements {
+  pressure_psi?: number | null
+  current_a?: number | null
+  voltage_v?: number | null
+  supply_c?: number | null
+  return_c?: number | null
+}
+
+export interface Certificate {
+  id: number
+  number: number
+  code: string
+  type: CertificateType
+  title: string
+  verification_code: string
+  status: 'VALIDO' | 'CANCELADO'
+  order_id: number
+  order_number: number
+  performed_at: string
+  next_service_at: string | null
+  technician_name: string
+  technician_registry: string | null
+  equipment: CertificateEquipment[]
+  checklist: ChecklistEntry[]
+  products: CertificateProduct[]
+  measurements: CertificateMeasurements | null
+  notes: string | null
+  client: { name: string; document: string | null; phone: string | null; address: string | null }
+  company: { name: string; document: string | null; phone: string | null; email: string | null; address: string | null }
+  issued_by: { id: number; name: string } | null
+  disclaimer: string | null
+  canceled_at: string | null
+  cancel_reason: string | null
+  created_at: string
+}
+
+export interface CertificateInput {
+  type: CertificateType
+  performed_at?: string
+  next_service_at?: string | null
+  technician_name?: string
+  technician_registry?: string
+  equipment: CertificateEquipment[]
+  checklist: ChecklistEntry[]
+  products?: CertificateProduct[]
+  measurements?: CertificateMeasurements
+  notes?: string
+}
+
+/** GET /public/certificates/:code */
+export interface PublicCertificate {
+  number: number
+  code: string
+  type: CertificateType
+  title: string
+  status: 'VALIDO' | 'CANCELADO'
+  performed_at: string
+  next_service_at: string | null
+  company: { name: string; phone: string }
+  client_name: string
+  equipment: { device: string; device_type?: string | null; btu?: string | null; ambiente?: string | null }[]
 }

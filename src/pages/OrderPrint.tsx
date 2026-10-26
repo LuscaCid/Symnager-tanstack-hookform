@@ -1,23 +1,18 @@
 import { useQuery } from "@tanstack/react-query"
 import { PrintSkeleton } from "@/components/skeletons/PageSkeletons"
-import { ArrowLeft, FileDown, Printer } from "lucide-react"
 import QRCode from "qrcode"
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
-import { toast } from "sonner"
-import type { PrinterInfo } from "@/@types/bridge"
+import { useParams } from "react-router-dom"
 import type { Settings } from "@/@types/api"
-import { Button, Checkbox, ErrorState, IconButton, inputClass, SelectField } from "@/components/ui"
+import { Checkbox, ErrorState } from "@/components/ui"
 import { A4Document, DEFAULT_PRINT_SETTINGS, ThermalDocument } from "@/components/orders/PrintDocument"
+import { PrintShell, type PrintLayout } from "@/components/print/PrintShell"
 import { cn } from "@/lib/cn"
 import { formatOrderNumber } from "@/lib/format"
 import { useSettings } from "@/lib/hooks"
+import { useSegment } from "@/lib/segment"
 import { getPrintPrefs, setPrintPrefs, trackingUrl } from "@/lib/printPrefs"
-import { bridge } from "@/lib/runtime"
 import { ordersService } from "@/services/resources"
-import { hasCustomTitleBar, needsMacInset, WindowControls } from "@/components/Layout/WindowControls"
-
-type Layout = "A4" | "THERMAL"
 
 /** Mescla configurações do servidor com padrões (servidor pode não ter todas as chaves). */
 function mergeSettings(s?: Partial<Settings>): Settings {
@@ -28,28 +23,18 @@ function mergeSettings(s?: Partial<Settings>): Settings {
   }
 }
 
-const PAGE_STYLE: Record<Layout, string> = {
-  A4: "@page { size: A4; margin: 10mm; }",
-  THERMAL: "@page { size: 80mm auto; margin: 3mm; }",
-}
-
 export default function OrderPrint() {
   const { id } = useParams()
   const orderId = Number(id)
-  const navigate = useNavigate()
   const settingsQuery = useSettings()
   const settings = useMemo(() => mergeSettings(settingsQuery.data), [settingsQuery.data])
+  const segment = useSegment()
   const prefs = useMemo(getPrintPrefs, [])
 
-  const [layout, setLayout] = useState<Layout>(prefs.layout || "A4")
+  const [layout, setLayout] = useState<PrintLayout>(prefs.layout || "A4")
   const [layoutTouched, setLayoutTouched] = useState(!!prefs.layout)
-  const [copies, setCopies] = useState(1)
   const [twoVias, setTwoVias] = useState(true)
-  const [printers, setPrinters] = useState<PrinterInfo[]>([])
-  const [deviceName, setDeviceName] = useState(prefs.deviceName)
-  const [silent, setSilent] = useState(prefs.silent)
   const [qrCode, setQrCode] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
 
   const { data: order, isLoading, isError, refetch } = useQuery({
     queryKey: ["order", orderId],
@@ -59,15 +44,8 @@ export default function OrderPrint() {
 
   // padrão da empresa quando esta máquina não tem preferência salva
   useEffect(() => {
-    if (!layoutTouched && settingsQuery.data) {
-      setLayout(settings.print.layout || "A4")
-      setCopies(settings.print.copies || 1)
-    }
-  }, [settingsQuery.data, settings.print.layout, settings.print.copies, layoutTouched])
-
-  useEffect(() => {
-    bridge?.listPrinters().then(setPrinters).catch(() => setPrinters([]))
-  }, [])
+    if (!layoutTouched && settingsQuery.data) setLayout(settings.print.layout || "A4")
+  }, [settingsQuery.data, settings.print.layout, layoutTouched])
 
   useEffect(() => {
     if (!order) return
@@ -78,183 +56,40 @@ export default function OrderPrint() {
       .catch(() => setQrCode(null))
   }, [order, settings.orders.public_url])
 
-  // tamanho de papel da regra @page acompanha o layout escolhido
-  useEffect(() => {
-    const style = document.createElement("style")
-    style.dataset.symnagerPrint = layout
-    style.textContent = PAGE_STYLE[layout]
-    document.head.appendChild(style)
-    return () => style.remove()
-  }, [layout])
-
-  useEffect(() => {
-    if (order) document.title = `${formatOrderNumber(order.number, settings.orders.prefix)} — impressão`
-    return () => {
-      document.title = "Symnager"
-    }
-  }, [order, settings.orders.prefix])
-
-  function changeLayout(next: Layout) {
+  function changeLayout(next: PrintLayout) {
     setLayout(next)
     setLayoutTouched(true)
     setPrintPrefs({ layout: next })
   }
 
-  async function handlePrint() {
-    if (!order) return
-    setBusy(true)
-    try {
-      if (bridge) {
-        setPrintPrefs({ deviceName, silent })
-        const result = await bridge.print({ deviceName: deviceName || undefined, silent, copies, layout })
-        if (!result.ok) {
-          if (result.error) toast.error(`Falha ao imprimir: ${result.error}`)
-          return
-        }
-      } else {
-        window.print()
-      }
-      ordersService.registerPrint(order.order_id, layout).catch(() => undefined)
-      if (bridge) toast.success("Enviado para a impressora.")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function handlePdf() {
-    if (!order || !bridge) return
-    setBusy(true)
-    try {
-      const path = await bridge.printToPDF({
-        defaultPath: `${formatOrderNumber(order.number, settings.orders.prefix)}.pdf`,
-        layout,
-      })
-      if (path) {
-        toast.success("PDF salvo.", { action: { label: "Abrir pasta", onClick: () => bridge!.showItemInFolder(path) } })
-        ordersService.registerPrint(order.order_id, layout).catch(() => undefined)
-      }
-    } finally {
-      setBusy(false)
-    }
-  }
-
   if (isLoading || settingsQuery.isLoading) return <PrintSkeleton />
   if (isError || !order) return <ErrorState message="Não foi possível carregar a OS para impressão." onRetry={() => refetch()} />
 
-  const docProps = { order, settings, qrCode }
+  const number = formatOrderNumber(order.number, settings.orders.prefix)
+  const docProps = { order, settings, qrCode, profile: segment.profile, customFields: segment.allFieldDefs }
   // na web as cópias são escolhidas no diálogo do navegador; aqui repetimos só as vias
   const vias = layout === "A4" && twoVias ? ["Via do cliente", "Via da loja"] : [undefined]
 
   return (
-    <div className="h-full flex flex-col print:block print:h-auto">
-      {/* barra de título: arrastável (desktop), ações principais e controles da janela sempre na mesma linha */}
-      <header
-        className={cn(
-          "no-print shrink-0 h-12 flex items-center gap-3 bg-surface border-b border-line select-none",
-          bridge && "app-drag",
-          needsMacInset ? "pl-20" : "pl-2",
-        )}
-        onDoubleClick={(e) => {
-          if (bridge && e.target === e.currentTarget) bridge.windowControls.toggleMaximize()
-        }}
-      >
-        <IconButton icon={ArrowLeft} label="Voltar" onClick={() => navigate(-1)} />
-        <div className="min-w-0 flex-1 pointer-events-none">
-          <h1 className="text-sm font-semibold truncate">
-            Imprimir {formatOrderNumber(order.number, settings.orders.prefix)}
-          </h1>
-          <p className="text-xs text-muted truncate">
-            {order.device}
-            {order.owner?.name ? ` · ${order.owner.name}` : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 pr-2">
-          {bridge && (
-            <Button size="sm" icon={FileDown} onClick={handlePdf} disabled={busy}>
-              Salvar PDF
-            </Button>
-          )}
-          <Button size="sm" variant="primary" icon={Printer} onClick={handlePrint} loading={busy}>
-            Imprimir
-          </Button>
-        </div>
-        {hasCustomTitleBar && (
-          <>
-            <span className="w-px h-5 bg-line" />
-            <WindowControls />
-          </>
-        )}
-      </header>
-
-      {/* opções de impressão: rótulos na linha, tudo alinhado ao centro */}
-      <div className="no-print shrink-0 flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 bg-surface border-b border-line text-[13px]">
-        <div className="flex items-center gap-2">
-          <span className="text-muted">Folha</span>
-          <div role="group" aria-label="Tipo de folha" className="flex gap-0.5 p-0.5 rounded-lg bg-subtle">
-            {(["A4", "THERMAL"] as Layout[]).map((l) => (
-              <button
-                key={l}
-                onClick={() => changeLayout(l)}
-                aria-pressed={layout === l}
-                className={cn(
-                  "h-8 px-3 rounded-md font-medium transition-colors duration-100",
-                  layout === l ? "bg-surface text-fg shadow-sm" : "text-muted hover:text-fg",
-                )}
-              >
-                {l === "A4" ? "A4" : "Térmica 80 mm"}
-              </button>
-            ))}
+    <PrintShell
+      title={number}
+      subtitle={`${order.device}${order.owner?.name ? ` · ${order.owner.name}` : ""}`}
+      layout={layout}
+      onLayoutChange={changeLayout}
+      defaultCopies={layoutTouched ? 1 : settings.print.copies || 1}
+      pdfName={`${number}.pdf`}
+      options={layout === "A4" && <Checkbox label="Duas vias" checked={twoVias} onChange={(e) => setTwoVias(e.target.checked)} />}
+      onPrinted={(l) => ordersService.registerPrint(order.order_id, l).catch(() => undefined)}
+    >
+      {layout === "THERMAL" ? (
+        <ThermalDocument {...docProps} />
+      ) : (
+        vias.map((via, i) => (
+          <div key={via ?? "unica"} className={cn(i > 0 && "print-break")}>
+            <A4Document {...docProps} via={via} />
           </div>
-        </div>
-        {layout === "A4" && <Checkbox label="Duas vias" checked={twoVias} onChange={(e) => setTwoVias(e.target.checked)} />}
-        {bridge && (
-          <>
-            <label className="flex items-center gap-2">
-              <span className="text-muted">Cópias</span>
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={copies}
-                onChange={(e) => setCopies(Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
-                className={cn(inputClass, "w-16 px-2 text-center")}
-              />
-            </label>
-            <div className="flex items-center gap-2">
-              <span className="text-muted">Impressora</span>
-              <SelectField
-                label="Impressora"
-                hideLabel
-                value={deviceName}
-                onChange={(e) => setDeviceName(e.target.value)}
-                wrapperClassName="w-60"
-              >
-                <option value="">Padrão do sistema</option>
-                {printers.map((p) => (
-                  <option key={p.name} value={p.name}>
-                    {p.displayName || p.name}
-                    {p.isDefault ? " (padrão)" : ""}
-                  </option>
-                ))}
-              </SelectField>
-            </div>
-            <Checkbox label="Imprimir sem abrir o diálogo" checked={silent} onChange={(e) => setSilent(e.target.checked)} />
-          </>
-        )}
-      </div>
-      <div className="flex-1 min-h-0 overflow-auto bg-subtle p-4 print:p-0 print:bg-white print:overflow-visible">
-        <div className="flex flex-col gap-4 print:gap-0">
-          {layout === "THERMAL" ? (
-            <ThermalDocument {...docProps} />
-          ) : (
-            vias.map((via, i) => (
-              <div key={via ?? "unica"} className={cn(i > 0 && "print-break")}>
-                <A4Document {...docProps} via={via} />
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
+        ))
+      )}
+    </PrintShell>
   )
 }

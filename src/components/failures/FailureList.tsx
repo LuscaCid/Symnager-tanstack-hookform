@@ -214,7 +214,7 @@ export function FailureList({ params, category, onCategoryChange, q, onQChange }
         {resolving?.description && <p className="text-sm mb-2 text-muted ">{resolving.description}</p>}
         <TextAreaField
           label="O que foi feito para resolver?"
-          placeholder="Ex.: aparelho refeito em garantia, peça trocada, nova entrega agendada..."
+          placeholder="Ex.: serviço refeito em garantia, peça trocada, nova visita agendada..."
           value={resolution}
           onChange={(e) => setResolution(e.target.value)}
           autoFocus

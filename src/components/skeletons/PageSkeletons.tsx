@@ -402,7 +402,7 @@ export function SettingsSkeleton() {
   return (
     <Screen>
       <SkeletonPageHeader actions={0} />
-      <SkeletonTabs count={10} />
+      <SkeletonTabs count={11} />
       <div className="px-4">
         <SettingsSectionSkeleton />
       </div>

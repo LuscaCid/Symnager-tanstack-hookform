@@ -4,6 +4,8 @@ import axios from "axios"
 import {
   AlertTriangle,
   ArrowLeft,
+  Award,
+  CalendarClock,
   ClipboardList,
   Copy,
   History,
@@ -41,6 +43,7 @@ import { OrderPaymentsTab } from "@/components/orders/OrderPaymentsTab"
 import { OrderHistoryTab } from "@/components/orders/OrderHistoryTab"
 import { OrderFailuresTab } from "@/components/orders/OrderFailuresTab"
 import { OrderPhotosTab } from "@/components/orders/OrderPhotosTab"
+import { OrderCertificatesTab } from "@/components/certificates/OrderCertificatesTab"
 import { StatusMenu } from "@/components/orders/StatusMenu"
 import { useStatusChange } from "@/components/orders/useStatusChange"
 import { balanceOf, isFinal, isOverdue, openExternal, warrantyInfo, whatsappLink, whatsappMessage } from "@/components/orders/orderUtils"
@@ -48,9 +51,10 @@ import { useHasRole } from "@/contexts/Auth-context"
 import { cn } from "@/lib/cn"
 import { formatDate, formatDateTime, formatDocument, formatMoney, formatOrderNumber, formatPhone } from "@/lib/format"
 import { useSettings } from "@/lib/hooks"
+import { useSegment } from "@/lib/segment"
 import { ordersService } from "@/services/resources"
 
-type TabKey = "itens" | "pagamentos" | "fotos" | "historico" | "falhas"
+type TabKey = "itens" | "pagamentos" | "fotos" | "certificados" | "historico" | "falhas"
 
 export default function OrderDetails() {
   const { id } = useParams()
@@ -58,6 +62,7 @@ export default function OrderDetails() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const settings = useSettings()
+  const segment = useSegment()
   const isAdmin = useHasRole()
   const [tab, setTab] = useState<TabKey>("itens")
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -113,7 +118,7 @@ export default function OrderDetails() {
       toast.error("O cliente não tem telefone cadastrado.")
       return
     }
-    openExternal(whatsappLink(order!.owner.phone, whatsappMessage(order!, settings.data?.company.name)))
+    openExternal(whatsappLink(order!.owner.phone, whatsappMessage(order!, settings.data?.company.name, segment.profile)))
   }
 
   async function copyTracking() {
@@ -174,6 +179,11 @@ export default function OrderDetails() {
             {overdue && <AlertTriangle size={14} />} Previsão {formatDate(order.due_date)}
           </span>
         )}
+        {order.scheduled_at && (
+          <span className={cn("inline-flex items-center gap-1", !final && "text-accent font-medium")}>
+            <CalendarClock size={14} /> {segment.profile.labels.scheduled_at}: {formatDateTime(order.scheduled_at)}
+          </span>
+        )}
         {warranty &&
           (warranty.active ? (
             <Badge className="bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30">
@@ -228,6 +238,9 @@ export default function OrderDetails() {
                   { key: "itens", label: `Itens (${order.items?.length ?? 0})`, icon: Wrench },
                   { key: "pagamentos", label: "Pagamentos", icon: Wallet },
                   { key: "fotos", label: "Fotos", icon: Images },
+                  ...(segment.certificateTypes.length
+                    ? [{ key: "certificados" as const, label: "Certificados", icon: Award }]
+                    : []),
                   { key: "historico", label: "Histórico", icon: History },
                   { key: "falhas", label: `Falhas${order.failures?.length ? ` (${order.failures.length})` : ""}`, icon: AlertTriangle },
                 ]}
@@ -236,6 +249,7 @@ export default function OrderDetails() {
                 {tab === "itens" && <OrderItemsTab order={order} readOnly={readOnly} />}
                 {tab === "pagamentos" && <OrderPaymentsTab order={order} readOnly={readOnly} />}
                 {tab === "fotos" && <OrderPhotosTab order={order} readOnly={readOnly} />}
+                {tab === "certificados" && <OrderCertificatesTab order={order} />}
                 {tab === "historico" && <OrderHistoryTab order={order} />}
                 {tab === "falhas" && <OrderFailuresTab order={order} />}
               </div>

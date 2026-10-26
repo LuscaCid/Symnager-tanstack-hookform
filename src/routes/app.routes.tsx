@@ -14,6 +14,7 @@ import {
 const {
   Dashboard, Home, Orders, OrderDetails, OrderPrint, User, ClientDetails, Failures, Services, Products,
   Suppliers, Users, Lookups, Settings, Audit, Login, Setup, Connection, Track, NotFound, License,
+  Verify, CertificatePrint,
 } = pages
 
 /** Inicialização (verificando servidor/sessão): casca do app em skeleton. */
@@ -64,8 +65,8 @@ function LegacyClientDetails() {
 export default function AppRoutes(){
   const status = useAuth((c) => c.status)
   const location = useLocation()
-  // sem licença válida, tudo (menos conexão e rastreio público) cai na tela de ativação
-  if (status === 'unlicensed' && !/^\/(conexao|rastreio)/.test(location.pathname)) {
+  // sem licença válida, tudo (menos conexão, rastreio e verificação públicos) cai na tela de ativação
+  if (status === 'unlicensed' && !/^\/(conexao|rastreio|verificar)/.test(location.pathname)) {
     return withSkeleton(License, AuthSkeleton)
   }
   return (
@@ -76,8 +77,11 @@ export default function AppRoutes(){
         <Route path='/conexao' element={withSkeleton(Connection, AuthSkeleton)} />
         <Route path='/rastreio' element={withSkeleton(Track, AuthSkeleton)} />
         <Route path='/rastreio/:code' element={withSkeleton(Track, AuthSkeleton)} />
+        <Route path='/verificar' element={withSkeleton(Verify, AuthSkeleton)} />
+        <Route path='/verificar/:code' element={withSkeleton(Verify, AuthSkeleton)} />
 
         <Route path='/ordens/:id/imprimir' element={<RequireAuth>{withSkeleton(OrderPrint, PrintSkeleton)}</RequireAuth>} />
+        <Route path='/certificados/:id/imprimir' element={<RequireAuth>{withSkeleton(CertificatePrint, PrintSkeleton)}</RequireAuth>} />
 
         <Route path='/' element={<RequireAuth><Layout /></RequireAuth>}>
           <Route index element={withSkeleton(Dashboard, DashboardSkeleton)} />

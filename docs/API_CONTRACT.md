@@ -117,6 +117,10 @@ type Order = {
   accessories: string | null; condition: string | null; device_password: string | null;
   description: string;                         // defeito relatado pelo cliente
   diagnosis: string | null; solution: string | null; internal_notes: string | null;
+  checklist: { item, ok: boolean|null, note? }[];
+  service_address: string | null;              // atendimento no local (ramos com visita)
+  scheduled_at: string | null;                 // data/hora da visita (ISO)
+  custom_fields: Record<string, string|number|boolean|null>; // campos do ramo (btu, gas...) e da empresa (cf_...); {} quando vazio
   arrived_at: string; due_date: string | null; finished_at: string | null; delivered_at: string | null;
   warranty_days: number; warranty_until: string | null;
   discount: number; total_services: number; total_products: number; total: number; paid: number;
@@ -128,15 +132,15 @@ type Order = {
 type OrderItem = { item_id, order_id, kind: 'SERVICE'|'PRODUCT', service_id: number|null, product_id: number|null,
                    description: string, quantity: number, unit_price: number, total: number }
 type Payment = { payment_id, order_id, method: string, amount: number, paid_at: string, notes: string|null, user?: {user_id,name} }
-type OrderHistory = { history_id, order_id, type: 'CREATED'|'STATUS'|'COMMENT'|'ITEM'|'PAYMENT'|'FAILURE'|'UPDATE'|'PRINT',
+type OrderHistory = { history_id, order_id, type: 'CREATED'|'STATUS'|'COMMENT'|'ITEM'|'PAYMENT'|'FAILURE'|'UPDATE'|'PRINT'|'SCHEDULE'|'CERTIFICATE',
                       from_status: string|null, to_status: string|null, message: string|null, created_at, user?: {user_id,name} }
 ```
 
 | Método | Rota | Notas |
 |---|---|---|
-| GET | `/orders` | paginado; filtros `q` (device/description/owner.name/number/tracking_code/serial), `status` (CSV), `priority`, `technician_id`, `owner_id`, `from`, `to` (arrived_at), `overdue=true` |
+| GET | `/orders` | paginado; filtros `q` (device/description/owner.name/number/tracking_code/serial/endereço/campos adicionais), `status` (CSV), `priority`, `technician_id`, `owner_id`, `from`, `to` (arrived_at), `overdue=true`, `scheduled_from`/`scheduled_to` (visitas); `sort=scheduled_at` permitido |
 | GET | `/orders/board` | `{ [status]: Order[] }` com OS não-finais + ENTREGUE/CANCELADA dos últimos 7 dias (kanban) |
-| POST | `/orders` | `{ owner_id, device, description, device_type?, brand?, model?, serial?, accessories?, condition?, device_password?, priority?, technician_id?, due_date?, warranty_days?, tags?: string[], items?: ItemInput[] }` |
+| POST | `/orders` | `{ owner_id, device, description, device_type?, brand?, model?, serial?, accessories?, condition?, device_password?, service_address?, scheduled_at?, custom_fields?, checklist?, priority?, technician_id?, due_date?, warranty_days?, tags?: string[], items?: ItemInput[] }` — TECNICO só altera diagnosis, solution, internal_notes, serial, condition, checklist e custom_fields |
 | GET | `/orders/:id` | completo (items, payments, history, failures) |
 | PUT | `/orders/:id` | parcial dos campos editáveis (não muda status) |
 | PATCH | `/orders/:id/status` | `{ status, message? }` — registra history; `PRONTA` seta `finished_at`; `ENTREGUE` seta `delivered_at` e `warranty_until` |
@@ -237,12 +241,20 @@ Chaves conhecidas:
   company: { name, document, phone, email, address, city, state, zipcode, logo /* data URL ≤ 300KB */ },
   orders:  { prefix: 'OS', default_warranty_days: 90, terms /* texto impresso no rodapé */, require_technician: false,
              public_url: '' /* URL web pública do /rastreio, usada no QR do comprovante */ },
-  print:   { layout: 'A4'|'THERMAL', copies: 1, show_qrcode: true, show_prices: true }
+  print:   { layout: 'A4'|'THERMAL', copies: 1, show_qrcode: true, show_prices: true },
+  segment: { id: SegmentId, applied: SegmentId[], custom_fields: CustomFieldDef[] /* máx. 6, chave cf_... imutável */,
+             on_site: boolean | null /* null = padrão do ramo */ },
+  certificates: { prefix: 'CERT', responsible_name, responsible_registry, hygiene_months: 6, preventive_months: 3,
+                  notes /* rodapé */, show_qrcode: true },
+  segment_profile: SegmentProfile   // somente leitura: perfil completo do ramo ativo (ver "Ramos de atuação")
 }
 ```
+PUT aceita `segment: { custom_fields?, on_site? }` (o ramo em si só muda por `POST /segments/apply`). `custom_fields` vai sempre
+completo (substitui); remover um campo já salvo → 400 (desative com `active: false`); mudar o tipo → 400.
 
 ## Consulta pública (`/api/public`)
-| GET | `/public/track/:code` (pública, rate-limit) | `{ number, status, device, arrived_at, finished_at, delivered_at, company: { name, phone } }` — nada sensível |
+| GET | `/public/track/:code` (pública, rate-limit) | `{ number, status, device, arrived_at, finished_at, delivered_at, scheduled_at, equipment_label, status_label, company: { name, phone } }` — nada sensível (sem endereço) |
+| GET | `/public/certificates/:code` (pública, 30/min) | `{ number, code, type, title, status, performed_at, next_service_at, company: { name, phone }, client_name /* mascarado */, equipment: [{ device, device_type?, btu?, ambiente? }] }` |
 
 ## Backup / exportação (`/api/backup`) — ADMIN
 | Método | Rota | Notas |
@@ -254,6 +266,63 @@ Chaves conhecidas:
 
 ## Auditoria (`/api/audit`) — ADMIN
 GET `/audit` paginado `{ audit_id, user?: {user_id,name}, action, entity, entity_id, ip, meta, created_at }`.
+
+## Ramos de atuação (`/api/segments`)
+
+Ramos: `CELULAR_INFORMATICA` (padrão, fluxo de assistência de celular), `AR_CONDICIONADO`, `ELETRODOMESTICOS`, `SERVICOS_GERAIS`.
+O catálogo fica na API (`src/segments/segment-catalog.ts`) e o app recebe o perfil ativo em `GET /settings` → `segment_profile`:
+
+```ts
+type SegmentProfile = {
+  id, name, short_name, description,
+  labels: { equipment, equipment_plural, device, device_placeholder, device_type, brand, model, model_placeholder, serial,
+            accessories, condition, condition_placeholder, device_password, description, description_placeholder,
+            diagnosis, solution, checklist, service_address, scheduled_at, business, top_types, turnaround },
+  fields: Record<'device_type'|'brand'|'model'|'serial'|'accessories'|'condition'|'device_password'|'checklist'|'service_address'|'scheduled_at',
+                 'required'|'optional'|'hidden'>,
+  status_labels: Partial<Record<OrderStatus, string>>,     // ex.: EM_REPARO → "Em execução"
+  lookup_labels: Partial<Record<LookupKind, string>>,
+  messages: { subject: 'Seu {equipamento}', status: Partial<Record<OrderStatus, string>>, scheduled: 'tem visita agendada para {data}' },
+  equipment_fields: CustomFieldDef[],                      // ex.: AC → btu, gas, tensao, ambiente
+  features: { on_site: boolean, certificates: ('HIGIENIZACAO'|'MANUTENCAO_PREVENTIVA')[] },
+  certificate_templates: { [type]: { title, checklist: string[], products_hint?, measurements?, months_setting, disclaimer? } },
+  defaults: { warranty_days }, seeds: { [kind]: string[] }
+}
+type CustomFieldDef = { key, label, type: 'text'|'number'|'select'|'date'|'boolean', options?, unit?, show_on_reception?, show_on_print?, active? }
+```
+
+| Método | Rota | Notas |
+|---|---|---|
+| GET | `/segments` | público (tela de configuração inicial) → `[{ id, name, short_name, description, features }]` |
+| GET | `/segments/:id/preview` | ADMIN → `{ from, to, add: { KIND: string[] } }` (itens que faltam nas listas) |
+| POST | `/segments/apply` | ADMIN `{ segment }` → `{ from, to, add, added }`; só acrescenta itens nas listas e troca `segment.id` |
+
+`POST /auth/setup` aceita `segment?` (sem ele vale `DEFAULT_SEGMENT` da API, vindo do instalador).
+O app mostra o local/agenda quando `settings.segment.on_site ?? segment_profile.features.on_site`.
+
+## Certificados (ramos com `features.certificates`, hoje AR_CONDICIONADO)
+
+```ts
+type Certificate = {
+  id, number, code /* "CERT-000012" */, type, title, verification_code, status: 'VALIDO'|'CANCELADO',
+  order_id, order_number, performed_at, next_service_at, technician_name, technician_registry,
+  equipment: { device, device_type?, brand?, model?, serial?, btu?, gas?, tensao?, ambiente? }[],
+  checklist: { item, ok, note? }[], products: { name, registry?, batch? }[],
+  measurements: { pressure_psi?, current_a?, voltage_v?, supply_c?, return_c? } | null, notes,
+  client: { name, document, phone, address }, company: { name, document, phone, email, address },
+  issued_by: { id, name } | null, disclaimer: string | null /* aviso PMOC no preventivo */, canceled_at, cancel_reason, created_at
+}
+```
+
+| Método | Rota | Notas |
+|---|---|---|
+| GET | `/orders/:id/certificates` | lista da OS (mais novo primeiro) |
+| POST | `/orders/:id/certificates` | TECNICO+ `{ type, performed_at?, next_service_at?, technician_name?, technician_registry?, equipment[1..30], checklist[], products?, measurements?, notes? }` → 201; 400 se o ramo não tiver certificados ou a OS estiver cancelada |
+| GET | `/certificates/:id` | certificado completo (impressão `/certificados/:id/imprimir`) |
+| POST | `/certificates/:id/cancel` | ADMIN `{ reason }` |
+| GET | `/certificates?due_from&due_to&type&status` | próximas manutenções (por `next_service_at`), paginado |
+
+QR do certificado: `orders.public_url + "/verificar/" + verification_code` quando há endereço público; senão só o código.
 
 ## Licença, planos e nuvem
 

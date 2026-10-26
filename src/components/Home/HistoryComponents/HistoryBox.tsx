@@ -2,6 +2,7 @@ import type { Order } from '@/@types/api'
 import { useNavigate } from 'react-router-dom'
 import { PriorityBadge, StatusBadge, TagChip } from '@/components/ui'
 import { formatMoney, formatOrderNumber, formatRelative } from '@/lib/format'
+import { VisitChip } from '@/components/orders/VisitChip'
 
 export function HistoryBox({ order } : { order : Order }){
     const navigate = useNavigate()
@@ -25,8 +26,9 @@ export function HistoryBox({ order } : { order : Order }){
             <p className='text-[13px] text-muted line-clamp-2'>
                 {formattedDescription}
             </p>
-            {(order.priority !== 'NORMAL' || order.tags.length > 0 || order.total > 0) && (
+            {(order.priority !== 'NORMAL' || order.tags.length > 0 || order.total > 0 || order.scheduled_at) && (
                 <footer className='flex flex-wrap items-center gap-1.5 pt-0.5'>
+                    {order.scheduled_at && <VisitChip iso={order.scheduled_at} address={order.service_address} />}
                     {order.priority !== 'NORMAL' && <PriorityBadge priority={order.priority} />}
                     {order.tags.map((tag) => <TagChip key={tag.tag_id}>{tag.slug}</TagChip>)}
                     {order.total > 0 && <span className='ml-auto text-[13px] font-semibold tabular-nums text-fg'>{formatMoney(order.total)}</span>}

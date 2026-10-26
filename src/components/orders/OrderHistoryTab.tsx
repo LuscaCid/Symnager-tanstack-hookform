@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   AlertTriangle,
+  Award,
+  CalendarClock,
   ArrowRight,
   Boxes,
   FilePlus2,
@@ -26,6 +28,8 @@ const ICONS: Record<OrderHistory["type"], LucideIcon> = {
   FAILURE: AlertTriangle,
   UPDATE: Pencil,
   PRINT: Printer,
+  SCHEDULE: CalendarClock,
+  CERTIFICATE: Award,
 }
 
 const LABELS: Record<OrderHistory["type"], string> = {
@@ -37,6 +41,8 @@ const LABELS: Record<OrderHistory["type"], string> = {
   FAILURE: "Falha registrada",
   UPDATE: "Dados alterados",
   PRINT: "Impressão",
+  SCHEDULE: "Agendamento",
+  CERTIFICATE: "Certificado",
 }
 
 export function OrderHistoryTab({ order }: { order: Order }) {

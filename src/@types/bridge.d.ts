@@ -25,6 +25,8 @@ export interface DesktopRuntime {
   userData: string
   dbPath: string
   platform: string
+  /** ramo padrão deste instalador (SYMNAGER_SEGMENT no build) */
+  segment?: string
 }
 
 export interface CloudCheckResult {

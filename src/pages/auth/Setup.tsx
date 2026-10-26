@@ -1,14 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useQuery } from "@tanstack/react-query"
 import { AuthSkeleton } from "@/components/skeletons/PageSkeletons"
-import { Rocket } from "lucide-react"
-import { useState } from "react"
+import { Check, Rocket } from "lucide-react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { Navigate, useNavigate } from "react-router-dom"
 import { z } from "zod"
 import { toast } from "sonner"
+import { SEGMENT_IDS, type SegmentId } from "@/@types/api"
 import { Button, TextField } from "@/components/ui"
 import { useAuth } from "@/contexts/Auth-context"
+import { cn } from "@/lib/cn"
+import { bridge } from "@/lib/runtime"
 import { getErrorMessage } from "@/service/api"
+import { segmentsService } from "@/services/resources"
 import { passwordSchema, usernameSchema } from "@/lib/validation"
 import OfflineScreen from "./Offline"
 import { AuthShell } from "./AuthShell"
@@ -25,17 +30,38 @@ const schema = z
   .refine((d) => d.password === d.confirm, { path: ["confirm"], message: "As senhas não conferem" })
 type FormType = z.infer<typeof schema>
 
-/** Primeira execução: cria o administrador e os dados da empresa. */
+const asSegment = (v: unknown): SegmentId | null =>
+  typeof v === "string" && (SEGMENT_IDS as readonly string[]).includes(v) ? (v as SegmentId) : null
+
+/** Ramo padrão desta instalação: o do instalador (Electron) ou o da versão web. */
+async function buildSegment(): Promise<SegmentId> {
+  const runtime = bridge ? await bridge.getRuntime().catch(() => null) : null
+  return asSegment(runtime?.segment) ?? asSegment(import.meta.env.VITE_SYMNAGER_SEGMENT) ?? "CELULAR_INFORMATICA"
+}
+
+/** Primeira execução: cria o administrador, escolhe o ramo e os dados da empresa. */
 export default function Setup() {
   const status = useAuth((c) => c.status)
   const setup = useAuth((c) => c.setup)
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
+  const [segment, setSegment] = useState<SegmentId | null>(null)
+  const segments = useQuery({
+    queryKey: ["segments"],
+    queryFn: segmentsService.list,
+    enabled: status === "needs-setup",
+    staleTime: Infinity,
+    retry: 1,
+  })
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormType>({ resolver: zodResolver(schema) })
+
+  useEffect(() => {
+    buildSegment().then((s) => setSegment((current) => current ?? s))
+  }, [])
 
   if (status === "loading") return <AuthSkeleton fields={6} />
   if (status === "offline") return <OfflineScreen />
@@ -50,6 +76,8 @@ export default function Setup() {
         email: data.email,
         password: data.password,
         company_name: data.company_name || undefined,
+        // API antiga (sem ramos) não lista os ramos: não envia o campo
+        ...(segments.data?.length && segment ? { segment } : {}),
       })
       toast.success("Tudo pronto! Bem-vindo ao Symnager.")
       navigate("/", { replace: true })
@@ -61,7 +89,37 @@ export default function Setup() {
   return (
     <AuthShell title="Configuração inicial" subtitle="Crie a conta de administrador. Ela terá acesso total ao sistema.">
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3" noValidate>
-        <TextField label="Nome da empresa / assistência" placeholder="Opcional" {...register("company_name")} />
+        {!!segments.data?.length && (
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="text-[13px] text-muted mb-1.5">Ramo de atuação</legend>
+            <div role="radiogroup" aria-label="Ramo de atuação" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {segments.data.map((s) => {
+                const active = segment === s.id
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setSegment(s.id)}
+                    className={cn(
+                      "text-left rounded-lg border p-2.5 transition-colors duration-150",
+                      active ? "border-accent bg-accent-soft" : "border-line hover:border-line-strong",
+                    )}
+                  >
+                    <span className="flex items-center gap-1.5 text-sm font-medium">
+                      {s.name}
+                      {active && <Check size={14} className="text-accent ml-auto shrink-0" />}
+                    </span>
+                    <span className="block text-xs text-faint mt-0.5 line-clamp-2">{s.description}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-xs text-faint">Define os campos da OS e as listas iniciais. Dá para trocar depois em Configurações.</p>
+          </fieldset>
+        )}
+        <TextField label="Nome da empresa" placeholder="Opcional" {...register("company_name")} />
         <TextField label="Seu nome" autoComplete="name" autoFocus error={errors.name?.message} {...register("name")} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <TextField label="Usuário" autoComplete="username" error={errors.username?.message} {...register("username")} />

@@ -10,6 +10,7 @@ import { useChartTheme } from "@/components/dashboard/chartTheme"
 import { Pareto } from "@/components/failures/Pareto"
 import { FailureList } from "@/components/failures/FailureList"
 import { buildInsights, Insight } from "@/components/failures/insights"
+import { useSegment } from "@/lib/segment"
 import { FAILURE_CATEGORY_LABEL, formatHours, formatNumber, formatPercent } from "@/lib/format"
 import { cn } from "@/lib/cn"
 import type { FailureCategory, FailureStats } from "@/@types/api"
@@ -22,7 +23,8 @@ const INSIGHT_STYLE: Record<Insight["tone"], { icon: typeof Info; className: str
 }
 
 function Insights({ stats }: { stats: FailureStats }) {
-  const insights = buildInsights(stats)
+  const { profile } = useSegment()
+  const insights = buildInsights(stats, profile)
   return (
     <Panel title="Insights" icon={Lightbulb} bodyClassName="p-2">
       <ul className="flex flex-col gap-2">
@@ -42,6 +44,7 @@ function Insights({ stats }: { stats: FailureStats }) {
 
 function StatsCharts({ stats, onCategory, onReason }: { stats: FailureStats; onCategory: (c: FailureCategory) => void; onReason: (r: string) => void }) {
   const t = useChartTheme()
+  const { label } = useSegment()
   const categories = [...stats.by_category]
     .filter((c) => c.count > 0)
     .sort((a, b) => b.count - a.count)
@@ -90,10 +93,10 @@ function StatsCharts({ stats, onCategory, onReason }: { stats: FailureStats; onC
         />
       </Panel>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ChartCard title="Por tipo de equipamento" icon={Smartphone} table={<MiniTable head={["Tipo", "Falhas"]} rows={devices.map((d) => [d.label, d.value])} />}>
+        <ChartCard title={`Por ${label("device_type").toLowerCase()}`} icon={Smartphone} table={<MiniTable head={[label("device_type"), "Falhas"]} rows={devices.map((d) => [d.label, d.value])} />}>
           {devices.length ? <HBarChart items={devices} /> : <NoData />}
         </ChartCard>
-        <ChartCard title="Por marca" icon={Smartphone} table={<MiniTable head={["Marca", "Falhas"]} rows={brands.map((d) => [d.label, d.value])} />}>
+        <ChartCard title={`Por ${label("brand").toLowerCase()}`} icon={Smartphone} table={<MiniTable head={[label("brand"), "Falhas"]} rows={brands.map((d) => [d.label, d.value])} />}>
           {brands.length ? <HBarChart items={brands} /> : <NoData />}
         </ChartCard>
       </div>

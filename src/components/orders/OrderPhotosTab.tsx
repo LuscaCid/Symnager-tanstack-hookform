@@ -9,6 +9,7 @@ import { formatDateTime } from "@/lib/format"
 import { compressImage } from "@/lib/image"
 import { toastError } from "@/lib/notify"
 import { ordersService } from "@/services/resources"
+import { useSegment } from "@/lib/segment"
 
 /** Busca a foto com o Bearer e devolve uma URL local (blob:), revogada ao desmontar. */
 function usePhotoUrl(orderId: number, photoId: number) {
@@ -118,10 +119,11 @@ function Viewer({
   )
 }
 
-/** Aba "Fotos" da OS: estado do aparelho na entrada, peças trocadas, laudos. */
+/** Aba "Fotos" da OS: estado do equipamento na entrada, peças trocadas, laudos. */
 export function OrderPhotosTab({ order, readOnly }: { order: Order; readOnly: boolean }) {
   const queryClient = useQueryClient()
   const license = useAuth((c) => c.license)
+  const { label } = useSegment()
   const input = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null)
   const [viewing, setViewing] = useState<number | null>(null)
@@ -224,7 +226,7 @@ export function OrderPhotosTab({ order, readOnly }: { order: Order; readOnly: bo
         <EmptyState
           icon={Images}
           title="Nenhuma foto"
-          description="Registre o estado do aparelho na entrada, as peças trocadas ou o laudo."
+          description={`Registre o estado do ${label("equipment")} antes e depois do serviço, as peças trocadas ou o laudo.`}
         />
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">

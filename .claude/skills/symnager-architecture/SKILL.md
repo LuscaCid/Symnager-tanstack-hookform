@@ -37,6 +37,9 @@ src/
   service/api.ts          axios único: baseURL em runtime, access token em memória, refresh automático em 401, getErrorMessage()
   services/resources.ts   TODAS as chamadas HTTP por recurso (ordersService, clientsService, ...). Página nunca chama axios direto.
   lib/runtime.ts          bridge/isDesktop, resolveApiBaseUrl()
+  lib/segment.ts          useSegment(): perfil do ramo (settings.segment_profile) — label(), show(), statusLabel(), lookupLabel(),
+                          customFields, onSite, certificateTypes; FALLBACK_PROFILE = textos do ramo celular (API antiga/offline)
+  lib/orderFields.ts      conversões dos campos da OS (custom_fields, datetime-local ↔ ISO, endereço do cliente)
   lib/plans.ts            catálogo de planos (Vitalício, Básico, Intermediário, Pro), describeLimits(), planName()
   lib/notify.ts           toastError(err): erro padrão; 403 PLAN_LIMIT ganha a ação "Ver planos" (/configuracoes/plano)
   lib/image.ts            compressImage(): fotos da OS reduzidas para 1600 px JPEG antes do upload
@@ -56,9 +59,13 @@ Regras:
   Após mutation invalide as listas afetadas (`history`, `orders`, `dashboard`, `order`).
 - Erros de mutation sem `onError` próprio já viram `toastError(err)` (MutationCache no `App.tsx`). Em catch manual, use `toastError`.
 - Permissões na UI: `useHasRole('TECNICO')` (ADMIN sempre passa). A API é quem garante; a UI só esconde.
+- Ramos (celular, ar-condicionado, eletrodomésticos, serviços gerais): **nunca** escreva rótulo de equipamento/status fixo.
+  Use `useSegment()` (`label("device")`, `statusLabel(s)`, `show("serial")`); funções puras recebem `profile`.
+  Formulário da OS: `buildOrderFieldsSchema(segment)` em `@types/CreateJob.ts` (recepção e detalhes usam o mesmo).
+  Campos extras: `CustomFieldsEditor`; local/visita: `ServiceLocationFields`; certificados: `components/certificates/`.
 - Rota nova: arquivo em `pages/`, `lazy()` + `<Route>` em `routes/app.routes.tsx`, item em `components/Layout/navigation.ts`.
 - Páginas: `<Page>` + `<PageHeader>` + `<PageBody>` (ou `SplitPane`). Nunca `absolute inset-*` para layout.
-- Impressão: rota `/ordens/:id/imprimir` fora do Layout. Electron → `bridge.print({ deviceName, silent, copies, layout })` /
+- Impressão: rotas `/ordens/:id/imprimir` e `/certificados/:id/imprimir` fora do Layout, ambas com `components/print/PrintShell`. Electron → `bridge.print({ deviceName, silent, copies, layout })` /
   `bridge.printToPDF`; web → `window.print()`. Registre a impressão com `ordersService.registerPrint`.
 - Exportação de banco: `backupService.database()` → `saveBinary(...)`. No Electron também há `bridge.backupNow()` (cópia direta + rotação).
 
@@ -74,11 +81,15 @@ Regras:
   para `build/api/`), `npm run electron:build` (Vite + tsc do electron + electron-builder; `build/api` vai em `extraResources`).
   Prisma: `node_modules/.prisma/**` e `@prisma/**` ficam fora do asar.
 - Caminho da API irmã: env `SYMNAGER_API_DIR` (padrão `../Symnager-nest-prisma`).
+- Ramo do instalador: `SYMNAGER_SEGMENT` no build (`scripts/build-electron.mjs` → `electron/segment.ts`), vai para
+  `runtime.segment` e para `DEFAULT_SEGMENT` da API local. `npm run electron:build:celular|ar|eletro|geral`
+  (`scripts/build-segment.mjs`) gera `release/Symnager-<Ramo>-Setup-x.y.z.exe`; `appId`/`productName` não mudam.
 
 ## Docker
 
 `docker-compose.yml` (raiz deste repo): `api` (build de `../Symnager-nest-prisma`, volume `symnager-data:/data`) + `web`
-(nginx com o build do Vite, proxy `/api`, headers de segurança). Variáveis em `.env` (ver `.env.example`).
+(nginx com o build do Vite, proxy `/api`, headers de segurança). Variáveis em `.env` (ver `.env.example`); `SYMNAGER_SEGMENT`
+define o ramo sugerido na configuração inicial (API `DEFAULT_SEGMENT` e build arg `VITE_SYMNAGER_SEGMENT`).
 
 ## Comandos úteis
 

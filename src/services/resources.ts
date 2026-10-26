@@ -1,5 +1,12 @@
 import { api, localApi } from "@/service/api"
 import type {
+  Certificate,
+  CertificateInput,
+  CertificateType,
+  PublicCertificate,
+  SegmentId,
+  SegmentPreview,
+  SegmentSummary,
   CloudUsage,
   LicenseRequestInput,
   LicenseStatus,
@@ -29,6 +36,7 @@ import type {
   Role,
   Service,
   Settings,
+  SettingsUpdate,
   StockMovement,
   Supplier,
   TrackInfo,
@@ -82,7 +90,14 @@ export const cloudService = {
 
 export const authService = {
   status: () => api.get<{ needs_setup: boolean }>("/auth/status").then((r) => r.data),
-  setup: (data: { name: string; username: string; email: string; password: string; company_name?: string }) =>
+  setup: (data: {
+    name: string
+    username: string
+    email: string
+    password: string
+    company_name?: string
+    segment?: SegmentId
+  }) =>
     api.post<AuthResponse>("/auth/setup", data).then((r) => r.data),
   login: (data: { login: string; password: string }) => api.post<AuthResponse>("/auth/login", data).then((r) => r.data),
   logout: (refresh_token?: string | null) => api.post("/auth/logout", refresh_token ? { refresh_token } : {}),
@@ -174,7 +189,33 @@ export const dashboardService = {
 
 export const settingsService = {
   get: () => api.get<Settings>("/settings").then((r) => r.data),
-  update: (data: Partial<Settings>) => api.put<Settings>("/settings", data).then((r) => r.data),
+  update: (data: SettingsUpdate) => api.put<Settings>("/settings", data).then((r) => r.data),
+}
+
+/** Ramos de atuação: lista pública (setup), prévia e troca (ADMIN). */
+export const segmentsService = {
+  list: () => api.get<SegmentSummary[]>("/segments").then((r) => r.data),
+  preview: (id: SegmentId) => api.get<SegmentPreview>(`/segments/${id}/preview`).then((r) => r.data),
+  apply: (segment: SegmentId) =>
+    api.post<SegmentPreview & { added: number }>("/segments/apply", { segment }).then((r) => r.data),
+}
+
+export type CertificateListItem = Certificate & { client_name?: string; client_phone?: string | null }
+
+/** Certificados de higienização / manutenção preventiva (ramo ar-condicionado). */
+export const certificatesService = {
+  ofOrder: (orderId: number) => api.get<Certificate[]>(`/orders/${orderId}/certificates`).then((r) => r.data),
+  issue: (orderId: number, data: CertificateInput) =>
+    api.post<Certificate>(`/orders/${orderId}/certificates`, data).then((r) => r.data),
+  get: (id: number) => api.get<Certificate>(`/certificates/${id}`).then((r) => r.data),
+  cancel: (id: number, reason: string) => api.post<Certificate>(`/certificates/${id}/cancel`, { reason }).then((r) => r.data),
+  /** próximas manutenções (filtra next_service_at) */
+  list: (params: { due_from?: string; due_to?: string; type?: CertificateType; status?: string; page_size?: number }) =>
+    api
+      .get<Paginated<CertificateListItem>>("/certificates", { params: clean(params as ListParams) })
+      .then((r) => r.data),
+  verify: (code: string) =>
+    api.get<PublicCertificate>(`/public/certificates/${encodeURIComponent(code)}`).then((r) => r.data),
 }
 
 export const trackService = {

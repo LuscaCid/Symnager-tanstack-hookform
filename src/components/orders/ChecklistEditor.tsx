@@ -8,6 +8,8 @@ interface ChecklistEditorProps {
   value: ChecklistEntry[]
   onChange: (value: ChecklistEntry[]) => void
   disabled?: boolean
+  /** itens fixos (ex.: modelo do certificado); sem ele, usa o cadastro auxiliar CHECKLIST */
+  items?: string[]
 }
 
 const STATES: { ok: boolean | null; label: string; icon: typeof Check; active: string }[] = [
@@ -28,14 +30,14 @@ export function mergeChecklist(saved: ChecklistEntry[] | null | undefined, catal
 }
 
 /** Checklist de entrada do equipamento: cada item marcado como conforme / problema / não verificado. */
-export function ChecklistEditor({ value, onChange, disabled }: ChecklistEditorProps) {
+export function ChecklistEditor({ value, onChange, disabled, items }: ChecklistEditorProps) {
   const lookups = useLookups("CHECKLIST")
-  const entries = mergeChecklist(value, (lookups.data ?? []).map((l) => l.name))
+  const entries = mergeChecklist(value, items ?? (lookups.data ?? []).map((l) => l.name))
 
   if (entries.length === 0) {
     return (
       <p className="text-xs text-faint flex items-center gap-1">
-        <ClipboardCheck size={14} /> Cadastre os itens em Cadastros auxiliares → Checklist de entrada.
+        <ClipboardCheck size={14} /> Cadastre os itens em Cadastros auxiliares → Checklist.
       </p>
     )
   }

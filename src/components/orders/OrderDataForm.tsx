@@ -1,53 +1,43 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { KeyRound, Save, Undo2 } from "lucide-react"
-import { useEffect } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { useEffect, useMemo } from "react"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 import { PRIORITIES, type Order, type OrderInput } from "@/@types/api"
+import { buildOrderFieldsSchema } from "@/@types/CreateJob"
 import { Button, ComboboxField, Panel, SelectField, TextAreaField, TextField } from "@/components/ui"
 import { useLookups, useTechnicians } from "@/lib/hooks"
 import { PRIORITY_LABEL } from "@/lib/format"
-import { ordersService } from "@/services/resources"
+import { clientAddress, orderFieldsFromOrder, orderFieldsToInput } from "@/lib/orderFields"
+import { type SegmentApi, useSegment } from "@/lib/segment"
+import { clientsService, ordersService } from "@/services/resources"
 import { useCurrentUser } from "@/contexts/Auth-context"
 import { dateInputToIso, isoToDateInput, parseDecimal } from "./orderUtils"
 import { answeredOnly, ChecklistEditor } from "./ChecklistEditor"
+import { CustomFieldsEditor } from "./CustomFieldsEditor"
+import { ServiceLocationFields } from "./ServiceLocationFields"
 
-const schema = z.object({
-  device: z.string().trim().min(2, "Informe o equipamento"),
-  device_type: z.string(),
-  brand: z.string(),
-  model: z.string(),
-  serial: z.string(),
-  accessories: z.string(),
-  condition: z.string(),
-  device_password: z.string(),
-  description: z.string().trim().min(3, "Descreva o defeito relatado"),
-  diagnosis: z.string(),
-  solution: z.string(),
-  internal_notes: z.string(),
-  priority: z.enum(PRIORITIES),
-  technician_id: z.string(),
-  due_date: z.string(),
-  warranty_days: z.string().refine((v) => v === "" || (Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 3650), "Dias inválidos"),
-  discount: z.string().refine((v) => parseDecimal(v) >= 0, "Desconto inválido"),
-  tags: z.string(),
-  checklist: z.array(z.object({ item: z.string(), ok: z.boolean().nullable(), note: z.string().optional() })),
-})
-type FormType = z.infer<typeof schema>
+function buildSchema(segment: SegmentApi) {
+  return buildOrderFieldsSchema(segment).extend({
+    diagnosis: z.string(),
+    solution: z.string(),
+    internal_notes: z.string(),
+    priority: z.enum(PRIORITIES),
+    technician_id: z.string(),
+    due_date: z.string(),
+    warranty_days: z.string().refine((v) => v === "" || (Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 3650), "Dias inválidos"),
+    discount: z.string().refine((v) => parseDecimal(v) >= 0, "Desconto inválido"),
+    tags: z.string(),
+    checklist: z.array(z.object({ item: z.string(), ok: z.boolean().nullable(), note: z.string().optional() })),
+  })
+}
+type FormType = z.infer<ReturnType<typeof buildSchema>>
 
 function toForm(o: Order): FormType {
   return {
-    device: o.device,
-    device_type: o.device_type ?? "",
-    brand: o.brand ?? "",
-    model: o.model ?? "",
-    serial: o.serial ?? "",
-    accessories: o.accessories ?? "",
-    condition: o.condition ?? "",
-    device_password: o.device_password ?? "",
-    description: o.description,
+    ...orderFieldsFromOrder(o),
     diagnosis: o.diagnosis ?? "",
     solution: o.solution ?? "",
     internal_notes: o.internal_notes ?? "",
@@ -63,17 +53,9 @@ function toForm(o: Order): FormType {
 
 const orNull = (v: string) => (v.trim() ? v.trim() : null)
 
-function toInput(d: FormType): Partial<OrderInput> {
+function toInput(d: FormType, segment: SegmentApi, order: Order): Partial<OrderInput> {
   return {
-    device: d.device.trim(),
-    device_type: orNull(d.device_type),
-    brand: orNull(d.brand),
-    model: orNull(d.model),
-    serial: orNull(d.serial),
-    accessories: orNull(d.accessories),
-    condition: orNull(d.condition),
-    device_password: orNull(d.device_password),
-    description: d.description.trim(),
+    ...orderFieldsToInput(d, segment, order),
     diagnosis: orNull(d.diagnosis),
     solution: orNull(d.solution),
     internal_notes: orNull(d.internal_notes),
@@ -92,28 +74,41 @@ function toInput(d: FormType): Partial<OrderInput> {
 }
 
 /** Campos que o técnico pode alterar (a API responde 403 para os demais). */
-const TECH_FIELDS = ["diagnosis", "solution", "internal_notes", "serial", "condition"] as const
+const TECH_FIELDS = ["diagnosis", "solution", "internal_notes", "serial", "condition", "checklist", "custom_fields"] as const
 
 function technicianInput(input: Partial<OrderInput>): Partial<OrderInput> {
-  return Object.fromEntries(TECH_FIELDS.map((k) => [k, input[k]])) as Partial<OrderInput>
+  return Object.fromEntries(TECH_FIELDS.filter((k) => input[k] !== undefined).map((k) => [k, input[k]])) as Partial<OrderInput>
 }
 
-/** Painel esquerdo da OS: dados do equipamento, laudo e planejamento. */
+/** Painel esquerdo da OS: dados do equipamento/serviço, laudo e planejamento. */
 export function OrderDataForm({ order, readOnly }: { order: Order; readOnly?: boolean }) {
   const queryClient = useQueryClient()
   const isTechnician = useCurrentUser()?.role === "TECNICO"
+  const segment = useSegment()
+  const L = segment.profile.labels
   const technicians = useTechnicians()
   const deviceTypes = useLookups("DEVICE_TYPE")
   const brands = useLookups("BRAND")
   const accessories = useLookups("ACCESSORY")
+  const schema = useMemo(() => buildSchema(segment), [segment.profile, segment.onSite]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     register,
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<FormType>({ resolver: zodResolver(schema), defaultValues: toForm(order) })
+  const address = useWatch({ control, name: "service_address" }) ?? ""
+
+  const client = useQuery({
+    queryKey: ["client", order.owner_id],
+    queryFn: () => clientsService.get(order.owner_id),
+    enabled: segment.onSite && !readOnly,
+    staleTime: 60_000,
+  })
+  const ownerAddress = clientAddress(client.data)
 
   // recarrega quando a OS muda no servidor (ex.: após adicionar item ou trocar status),
   // preservando o que o usuário está editando no momento
@@ -133,70 +128,123 @@ export function OrderDataForm({ order, readOnly }: { order: Order; readOnly?: bo
     },
   })
 
+  const techSaved = [L.diagnosis, L.solution, "observações internas", segment.show("serial") && L.serial, segment.show("condition") && L.condition]
+    .filter(Boolean)
+    .map((s) => String(s).toLowerCase())
+
   return (
     <form
       noValidate
-      onSubmit={handleSubmit((d) => mutation.mutate(isTechnician ? technicianInput(toInput(d)) : toInput(d)))}
+      onSubmit={handleSubmit((d) => {
+        const input = toInput(d, segment, order)
+        mutation.mutate(isTechnician ? technicianInput(input) : input)
+      })}
       className="flex flex-col gap-2 p-2"
     >
       {isTechnician && !readOnly && (
         <p className="text-xs text-muted border border-line  rounded-md p-2">
-          Como técnico, suas alterações salvas são: diagnóstico, solução, observações internas, nº de série e estado físico.
+          Como técnico, suas alterações salvas são: {techSaved.join(", ")}, checklist e campos adicionais.
         </p>
       )}
       <fieldset disabled={readOnly} className="flex flex-col gap-2 min-w-0">
-        <Panel title="Equipamento">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <TextField label="Equipamento" wrapperClassName="sm:col-span-2" error={errors.device?.message} {...register("device")} />
-            <SelectField label="Tipo" {...register("device_type")}>
-              <option value="">—</option>
-              {order.device_type && !deviceTypes.data?.some((d) => d.name === order.device_type) && (
-                <option value={order.device_type}>{order.device_type}</option>
+        <Panel title={L.device}>
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <TextField label={L.device} wrapperClassName="sm:col-span-2" error={errors.device?.message} {...register("device")} />
+              {segment.show("device_type") && (
+                <SelectField label={L.device_type} error={errors.device_type?.message} {...register("device_type")}>
+                  <option value="">—</option>
+                  {order.device_type && !deviceTypes.data?.some((d) => d.name === order.device_type) && (
+                    <option value={order.device_type}>{order.device_type}</option>
+                  )}
+                  {deviceTypes.data?.map((d) => (
+                    <option key={d.lookup_id} value={d.name}>
+                      {d.name}
+                    </option>
+                  ))}
+                </SelectField>
               )}
-              {deviceTypes.data?.map((d) => (
-                <option key={d.lookup_id} value={d.name}>
-                  {d.name}
-                </option>
-              ))}
-            </SelectField>
-            <ComboboxField label="Marca" options={(brands.data ?? []).map((b) => b.name)} disabled={readOnly} {...register("brand")} />
-            <TextField label="Modelo" {...register("model")} />
-            <TextField label="Nº de série / IMEI" {...register("serial")} />
-            <ComboboxField
-              label="Acessórios"
-              placeholder="Nenhum"
-              multiple
-              options={(accessories.data ?? []).map((a) => a.name)}
+              {segment.show("brand") && (
+                <ComboboxField
+                  label={L.brand}
+                  options={(brands.data ?? []).map((b) => b.name)}
+                  disabled={readOnly}
+                  error={errors.brand?.message}
+                  {...register("brand")}
+                />
+              )}
+              {segment.show("model") && <TextField label={L.model} error={errors.model?.message} {...register("model")} />}
+              {segment.show("serial") && <TextField label={L.serial} error={errors.serial?.message} {...register("serial")} />}
+              {segment.show("accessories") && (
+                <ComboboxField
+                  label={L.accessories}
+                  placeholder="Nenhum"
+                  multiple
+                  options={(accessories.data ?? []).map((a) => a.name)}
+                  disabled={readOnly}
+                  {...register("accessories")}
+                />
+              )}
+              {segment.show("device_password") && (
+                <TextField
+                  label={L.device_password}
+                  autoComplete="off"
+                  hint={
+                    <span className="inline-flex items-center gap-1">
+                      <KeyRound size={12} /> visível só para a equipe
+                    </span>
+                  }
+                  {...register("device_password")}
+                />
+              )}
+              {segment.show("condition") && (
+                <TextAreaField
+                  label={L.condition}
+                  placeholder={L.condition_placeholder}
+                  wrapperClassName="sm:col-span-2"
+                  className="min-h-14"
+                  {...register("condition")}
+                />
+              )}
+            </div>
+            <CustomFieldsEditor
+              fields={segment.customFields}
+              register={register}
+              saved={order.custom_fields}
+              allDefs={segment.allFieldDefs}
               disabled={readOnly}
-              {...register("accessories")}
             />
-            <TextField
-              label="Senha / padrão"
-              autoComplete="off"
-              hint={
-                <span className="inline-flex items-center gap-1">
-                  <KeyRound size={12} /> visível só para a equipe
-                </span>
-              }
-              {...register("device_password")}
-            />
-            <TextAreaField label="Estado físico na entrada" wrapperClassName="sm:col-span-2" className="min-h-14" {...register("condition")} />
           </div>
         </Panel>
 
-        <Panel title="Checklist de entrada">
-          <Controller
-            control={control}
-            name="checklist"
-            render={({ field }) => <ChecklistEditor value={field.value} onChange={field.onChange} disabled={readOnly} />}
-          />
-        </Panel>
+        {segment.onSite && (
+          <Panel title={L.service_address}>
+            <ServiceLocationFields
+              register={register}
+              labels={L}
+              address={address}
+              clientAddress={ownerAddress}
+              onUseClientAddress={() => setValue("service_address", ownerAddress, { shouldDirty: true })}
+              disabled={readOnly}
+            />
+          </Panel>
+        )}
+
+        {segment.show("checklist") && (
+          <Panel title={L.checklist}>
+            <Controller
+              control={control}
+              name="checklist"
+              render={({ field }) => <ChecklistEditor value={field.value} onChange={field.onChange} disabled={readOnly} />}
+            />
+          </Panel>
+        )}
 
         <Panel title="Laudo">
           <div className="flex flex-col gap-2">
-            <TextAreaField label="Defeito relatado" error={errors.description?.message} {...register("description")} />
-            <TextAreaField label="Diagnóstico técnico" placeholder="O que foi constatado" {...register("diagnosis")} />
-            <TextAreaField label="Solução aplicada" placeholder="O que foi feito" {...register("solution")} />
+            <TextAreaField label={L.description} error={errors.description?.message} {...register("description")} />
+            <TextAreaField label={L.diagnosis} placeholder="O que foi constatado" {...register("diagnosis")} />
+            <TextAreaField label={L.solution} placeholder="O que foi feito" {...register("solution")} />
             <TextAreaField
               label="Observações internas"
               hint="Não aparecem na impressão nem para o cliente"

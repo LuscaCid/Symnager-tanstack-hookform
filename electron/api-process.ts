@@ -6,6 +6,7 @@ import net from "node:net"
 import path from "node:path"
 import { CLOUD_API_URL, CLOUD_URL } from "./cloud-url"
 import { dbPath, getJwtSecret, loadConfig, logsDir } from "./config"
+import { BUILD_SEGMENT } from "./segment"
 
 export type ApiStatus = "starting" | "running" | "error" | "stopped" | "remote"
 
@@ -22,6 +23,8 @@ export interface Runtime {
   userData: string
   dbPath: string
   platform: string
+  /** ramo padrão deste instalador (configuração inicial) */
+  segment: string
 }
 
 const HEALTH_TIMEOUT_MS = 90_000
@@ -89,6 +92,7 @@ class ApiProcess extends EventEmitter {
       userData: app.getPath("userData"),
       dbPath: dbPath(),
       platform: process.platform,
+      segment: BUILD_SEGMENT,
     }
   }
 
@@ -148,6 +152,8 @@ class ApiProcess extends EventEmitter {
         INTERNAL_TOKEN: this.internalToken,
         COOKIE_SECURE: "false",
         TRUST_PROXY: "false",
+        // ramo do instalador: a API usa na configuração inicial quando o app não envia outro
+        DEFAULT_SEGMENT: BUILD_SEGMENT,
       }
       delete env.ELECTRON_RUN_AS_NODE
 

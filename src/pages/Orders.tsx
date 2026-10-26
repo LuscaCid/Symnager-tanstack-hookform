@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { OrdersTableSkeleton } from "@/components/skeletons/PageSkeletons"
 import { AlertTriangle, ClipboardList, LayoutGrid, List, Plus, X } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { ORDER_STATUSES, PRIORITIES, type Order, type OrderStatus } from "@/@types/api"
 import {
@@ -23,13 +23,28 @@ import {
 import { OrderBoard } from "@/components/orders/OrderBoard"
 import { isOverdue } from "@/components/orders/orderUtils"
 import { cn } from "@/lib/cn"
-import { formatDate, formatMoney, formatOrderNumber, PRIORITY_LABEL, STATUS_HEX, STATUS_LABEL } from "@/lib/format"
+import { formatDate, formatMoney, formatOrderNumber, PRIORITY_LABEL, STATUS_HEX } from "@/lib/format"
+import { type SegmentApi, useSegment } from "@/lib/segment"
+import { VisitChip } from "@/components/orders/VisitChip"
 import { useDebounce, useTechnicians } from "@/lib/hooks"
 import { ordersService } from "@/services/resources"
 
 const PAGE_SIZE = 25
 
-const columns: Column<Order>[] = [
+type VisitFilter = "" | "today" | "week"
+
+/** Intervalo das visitas: hoje ou os próximos 7 dias (horário local). */
+function visitRange(filter: VisitFilter) {
+  if (!filter) return null
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + (filter === "today" ? 1 : 7))
+  end.setMilliseconds(-1)
+  return { from: start.toISOString(), to: end.toISOString() }
+}
+
+const buildColumns = (segment: SegmentApi): Column<Order>[] => [
   {
     key: "number",
     header: "OS",
@@ -43,7 +58,7 @@ const columns: Column<Order>[] = [
   },
   {
     key: "device",
-    header: "Equipamento",
+    header: segment.label("device"),
     render: (o) => (
       <Tooltip content={o.description} side="top" align="start">
         <span className="block max-w-64 truncate">{o.device}</span>
@@ -51,6 +66,18 @@ const columns: Column<Order>[] = [
     ),
   },
   { key: "status", header: "Status", render: (o) => <StatusBadge status={o.status} /> },
+  ...(segment.onSite
+    ? [
+        {
+          key: "visit",
+          header: "Visita",
+          hideOnMobile: true,
+          className: "whitespace-nowrap",
+          render: (o: Order) =>
+            o.scheduled_at ? <VisitChip iso={o.scheduled_at} address={o.service_address} /> : <span className="text-faint">—</span>,
+        } satisfies Column<Order>,
+      ]
+    : []),
   { key: "priority", header: "Prioridade", hideOnMobile: true, render: (o) => <PriorityBadge priority={o.priority} /> },
   {
     key: "technician",
@@ -81,6 +108,8 @@ function OrdersList() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const technicians = useTechnicians()
+  const segment = useSegment()
+  const columns = useMemo(() => buildColumns(segment), [segment.profile, segment.onSite]) // eslint-disable-line react-hooks/exhaustive-deps
   const [query, setQuery] = useState(params.get("q") ?? "")
   const q = useDebounce(query.trim(), 300)
 
@@ -90,6 +119,8 @@ function OrdersList() {
   const from = params.get("from") ?? ""
   const to = params.get("to") ?? ""
   const overdue = params.get("overdue") === "true"
+  const visits = (segment.onSite ? params.get("visits") ?? "" : "") as VisitFilter
+  const range = visitRange(visits)
   const page = Number(params.get("page") ?? 1) || 1
 
   function setParam(key: string, value: string | null, resetPage = true) {
@@ -115,7 +146,7 @@ function OrdersList() {
     setParam("status", next.join(",") || null)
   }
 
-  const hasFilters = !!(q || statuses.length || priority || technician || from || to || overdue)
+  const hasFilters = !!(q || statuses.length || priority || technician || from || to || overdue || visits)
 
   function clearFilters() {
     setQuery("")
@@ -127,7 +158,7 @@ function OrdersList() {
   }
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ["orders", { q, statuses, priority, technician, from, to, overdue, page }],
+    queryKey: ["orders", { q, statuses, priority, technician, from, to, overdue, visits, page }],
     queryFn: () =>
       ordersService.list({
         q,
@@ -137,10 +168,13 @@ function OrdersList() {
         from: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
         to: to ? new Date(`${to}T23:59:59`).toISOString() : undefined,
         overdue: overdue || undefined,
+        scheduled_from: range?.from,
+        scheduled_to: range?.to,
         page,
         page_size: PAGE_SIZE,
-        sort: "arrived_at",
-        order: "desc",
+        // com filtro de visitas, a ordem é a da agenda
+        sort: range ? "scheduled_at" : "arrived_at",
+        order: range ? "asc" : "desc",
       }),
     placeholderData: (prev) => prev,
   })
@@ -148,7 +182,11 @@ function OrdersList() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="shrink-0 flex flex-col gap-3 px-4 pb-4">
-        <SearchInput value={query} onChange={setQuery} placeholder="Buscar por nº, cliente, equipamento, série ou código de rastreio" />
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder={`Buscar por nº, cliente, ${segment.label("device").toLowerCase()}${segment.show("serial") ? ", série" : ""}${segment.onSite ? ", endereço" : ""} ou código de rastreio`}
+        />
         <div className="flex flex-wrap gap-1" role="group" aria-label="Filtrar por status">
           {ORDER_STATUSES.map((status) => {
             const active = statuses.includes(status)
@@ -165,12 +203,12 @@ function OrdersList() {
                 )}
               >
                 <span className="w-2 h-2 rounded-full" style={{ background: STATUS_HEX[status] }} />
-                {STATUS_LABEL[status]}
+                {segment.statusLabel(status)}
               </button>
             )
           })}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
+        <div className={cn("grid grid-cols-2 gap-2 items-end", segment.onSite ? "md:grid-cols-6" : "md:grid-cols-5")}>
           <SelectField label="Prioridade" value={priority} onChange={(e) => setParam("priority", e.target.value || null)}>
             <option value="">Todas</option>
             {PRIORITIES.map((p) => (
@@ -187,6 +225,13 @@ function OrdersList() {
               </option>
             ))}
           </SelectField>
+          {segment.onSite && (
+            <SelectField label="Visitas" value={visits} onChange={(e) => setParam("visits", e.target.value || null)}>
+              <option value="">Todas</option>
+              <option value="today">Hoje</option>
+              <option value="week">Próximos 7 dias</option>
+            </SelectField>
+          )}
           <TextField label="Entrada de" type="date" value={from} onChange={(e) => setParam("from", e.target.value || null)} />
           <TextField label="até" type="date" value={to} onChange={(e) => setParam("to", e.target.value || null)} />
           <div className="flex gap-2 col-span-2 md:col-span-1">

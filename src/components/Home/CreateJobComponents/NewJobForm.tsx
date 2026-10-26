@@ -1,16 +1,16 @@
 
 import { PenBox, PenLine, ChevronDown, KeyRound } from 'lucide-react'
-import { useForm, FormProvider } from 'react-hook-form'
+import { useForm, FormProvider, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod';
-import { NewJobFormSchema, NewJobFormSchemaType, UsersProperties } from '@/@types/CreateJob';
+import { buildNewJobSchema, NewJobFormSchemaType, UsersProperties } from '@/@types/CreateJob';
 import { SelectClientSection } from './SelectClientSection';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { generateObjectToSend } from '../../../Functions/newJobFunctions';
 import { NewJobFormReducerObject } from "../../../reducers/NewJobForm";
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ordersService } from '@/services/resources';
+import { clientsService, ordersService } from '@/services/resources';
 import { useLookups, useTechnicians } from '@/lib/hooks';
 import { Button, ComboboxField, SelectField, TextAreaField, TextField } from '@/components/ui';
 import { PRIORITIES } from '@/@types/api';
@@ -18,20 +18,16 @@ import { formatOrderNumber, PRIORITY_LABEL } from '@/lib/format';
 import { cn } from '@/lib/cn';
 import type { ChecklistEntry } from '@/@types/api';
 import { answeredOnly, ChecklistEditor } from '@/components/orders/ChecklistEditor';
+import { useSegment } from '@/lib/segment';
+import { clientAddress, EMPTY_ORDER_FIELDS } from '@/lib/orderFields';
+import { CustomFieldsEditor } from '@/components/orders/CustomFieldsEditor';
+import { ServiceLocationFields } from '@/components/orders/ServiceLocationFields';
 
 const defaultValues: NewJobFormSchemaType = {
-  device : "",
-  description : "",
+  ...EMPTY_ORDER_FIELDS,
   price : "",
   tag : "",
   priority : "NORMAL",
-  device_type : "",
-  brand : "",
-  model : "",
-  serial : "",
-  accessories : "",
-  condition : "",
-  device_password : "",
   technician_id : "",
   due_date : "",
 }
@@ -44,6 +40,8 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
     handleRemoveUserSelected
   } = NewJobFormReducerObject(initialClient ?? null)
 
+  const segment = useSegment()
+  const L = segment.profile.labels
   const [showDetails, setShowDetails] = useState(false)
   const [clientError, setClientError] = useState(false)
   const [checklist, setChecklist] = useState<ChecklistEntry[]>([])
@@ -52,14 +50,28 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
   const brands = useLookups('BRAND')
   const accessories = useLookups('ACCESSORY')
   const technicians = useTechnicians()
+  const schema = useMemo(() => buildNewJobSchema(segment), [segment.profile, segment.onSite]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const newJobFormProps = useForm<NewJobFormSchemaType>({
-    resolver : zodResolver(NewJobFormSchema),
+    resolver : zodResolver(schema),
     defaultValues,
   })
   //form provider to inputs and handle submit form
 
-  const {handleSubmit, reset, register, formState : { errors }} = newJobFormProps
+  const {handleSubmit, reset, register, setValue, getValues, control, formState : { errors }} = newJobFormProps
+  const address = useWatch({ control, name : 'service_address' }) ?? ''
+
+  // endereço cadastrado do cliente: preenche o local do atendimento quando ainda está vazio
+  const client = useQuery({
+    queryKey : ['client', userSelected?.id],
+    queryFn : () => clientsService.get(userSelected!.id),
+    enabled : segment.onSite && !!userSelected,
+    staleTime : 60_000,
+  })
+  const selectedAddress = clientAddress(client.data)
+  useEffect(() => {
+    if (selectedAddress && !getValues('service_address')) setValue('service_address', selectedAddress)
+  }, [selectedAddress, getValues, setValue])
 
   const queryClient = useQueryClient()
 
@@ -86,7 +98,7 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
       setClientError(true)
       return
     }
-    await addNewJobMutation(generateObjectToSend(data, userSelected, answeredOnly(checklist)))
+    await addNewJobMutation(generateObjectToSend(data, userSelected, segment, answeredOnly(checklist)))
   }
 
   function selectUser(user : UsersProperties) {
@@ -96,6 +108,16 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
 
   const section = 'flex flex-col gap-3'
   const sectionTitle = 'text-xs font-medium uppercase tracking-wider text-faint'
+  const receptionFields = segment.customFields.filter((f) => f.show_on_reception !== false)
+  const detailParts = [
+    segment.show('accessories') && L.accessories.toLowerCase(),
+    segment.show('device_password') && 'senha',
+    segment.show('condition') && L.condition.toLowerCase(),
+    segment.show('checklist') && 'checklist',
+  ].filter(Boolean) as string[]
+  const detailsTitle = detailParts.length
+    ? detailParts.join(', ').replace(/^./, (c) => c.toUpperCase()).replace(/, ([^,]*)$/, ' e $1')
+    : ''
 
   return (
     <FormProvider {...newJobFormProps}>
@@ -120,36 +142,57 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
         </section>
 
         <section className={section}>
-          <h3 className={sectionTitle}>Equipamento</h3>
+          <h3 className={sectionTitle}>{L.device}</h3>
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3'>
             <TextField
               wrapperClassName='sm:col-span-2'
-              label='Equipamento'
-              placeholder='ex.: Samsung Galaxy S20'
+              label={L.device}
+              placeholder={L.device_placeholder}
               error={errors.device?.message}
               {...register('device')}
             />
-            <SelectField label='Tipo de equipamento' placeholder='Selecione o tipo' searchable {...register('device_type')}>
-              <option value=''>Não informado</option>
-              {deviceTypes.data?.map((d) => <option key={d.lookup_id} value={d.name}>{d.name}</option>)}
-            </SelectField>
-            <ComboboxField
-              label='Marca'
-              placeholder='Selecione ou digite'
-              options={(brands.data ?? []).map((b) => b.name)}
-              {...register('brand')}
-            />
-            <TextField label='Modelo' placeholder='ex.: SM-G980F' {...register('model')} />
-            <TextField label='Nº de série / IMEI' {...register('serial')} />
+            {segment.show('device_type') && (
+              <SelectField label={L.device_type} placeholder='Selecione' searchable error={errors.device_type?.message} {...register('device_type')}>
+                <option value=''>Não informado</option>
+                {deviceTypes.data?.map((d) => <option key={d.lookup_id} value={d.name}>{d.name}</option>)}
+              </SelectField>
+            )}
+            {segment.show('brand') && (
+              <ComboboxField
+                label={L.brand}
+                placeholder='Selecione ou digite'
+                options={(brands.data ?? []).map((b) => b.name)}
+                error={errors.brand?.message}
+                {...register('brand')}
+              />
+            )}
+            {segment.show('model') && (
+              <TextField label={L.model} placeholder={L.model_placeholder || undefined} error={errors.model?.message} {...register('model')} />
+            )}
+            {segment.show('serial') && <TextField label={L.serial} error={errors.serial?.message} {...register('serial')} />}
           </div>
+          {receptionFields.length > 0 && <CustomFieldsEditor fields={receptionFields} register={register} />}
         </section>
 
+        {segment.onSite && (
+          <section className={section}>
+            <h3 className={sectionTitle}>{L.service_address}</h3>
+            <ServiceLocationFields
+              register={register}
+              labels={L}
+              address={address}
+              clientAddress={selectedAddress}
+              onUseClientAddress={() => setValue('service_address', selectedAddress, { shouldDirty : true })}
+            />
+          </section>
+        )}
+
         <section className={section}>
-          <h3 className={sectionTitle}>Problema relatado</h3>
+          <h3 className={sectionTitle}>{L.description}</h3>
           <TextAreaField
-            label='Defeito relatado pelo cliente'
+            label={L.description}
             hideLabel
-            placeholder='Descreva o problema relatado pelo cliente'
+            placeholder={L.description_placeholder}
             className='min-h-24'
             error={errors.description?.message}
             {...register('description')}
@@ -161,7 +204,7 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
           <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-3 gap-y-3'>
             <div className='relative'>
               <TextField
-                label='Valor do conserto'
+                label='Valor do serviço'
                 placeholder='0,00'
                 inputMode='decimal'
                 className='pl-9'
@@ -188,46 +231,56 @@ export function NewJobForm ({ initialClient } : { initialClient? : UsersProperti
           </div>
         </section>
 
-        <section className='flex flex-col gap-3'>
-          <button
-            type='button'
-            onClick={() => setShowDetails((s) => !s)}
-            aria-expanded={showDetails}
-            className='flex items-center justify-between text-[13px] font-medium text-muted h-9 px-3 rounded-lg bg-subtle/70 hover:bg-hover hover:text-fg transition-colors'
-          >
-            Acessórios, senha, estado físico e checklist
-            <ChevronDown size={16} className={cn('transition-transform duration-150', showDetails && 'rotate-180')} />
-          </button>
+        {detailsTitle && (
+          <section className='flex flex-col gap-3'>
+            <button
+              type='button'
+              onClick={() => setShowDetails((s) => !s)}
+              aria-expanded={showDetails}
+              className='flex items-center justify-between text-[13px] font-medium text-muted h-9 px-3 rounded-lg bg-subtle/70 hover:bg-hover hover:text-fg transition-colors'
+            >
+              {detailsTitle}
+              <ChevronDown size={16} className={cn('transition-transform duration-150', showDetails && 'rotate-180')} />
+            </button>
 
-          {showDetails && (
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3'>
-              <ComboboxField
-                label='Acessórios entregues'
-                placeholder='Nenhum'
-                multiple
-                options={(accessories.data ?? []).map((a) => a.name)}
-                {...register('accessories')}
-              />
-              <TextField
-                label='Senha / padrão de desbloqueio'
-                autoComplete='off'
-                hint={<span className='inline-flex items-center gap-1'><KeyRound size={11} /> só a equipe vê</span>}
-                {...register('device_password')}
-              />
-              <TextAreaField
-                wrapperClassName='sm:col-span-2'
-                label='Estado físico na entrada'
-                placeholder='riscos, trincas, amassados...'
-                className='min-h-16'
-                {...register('condition')}
-              />
-              <div className='sm:col-span-2 flex flex-col gap-2 rounded-lg border border-line p-3'>
-                <span className='text-[13px] font-medium text-muted'>Checklist de entrada</span>
-                <ChecklistEditor value={checklist} onChange={setChecklist} />
+            {showDetails && (
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3'>
+                {segment.show('accessories') && (
+                  <ComboboxField
+                    label={L.accessories}
+                    placeholder='Nenhum'
+                    multiple
+                    options={(accessories.data ?? []).map((a) => a.name)}
+                    {...register('accessories')}
+                  />
+                )}
+                {segment.show('device_password') && (
+                  <TextField
+                    label={L.device_password}
+                    autoComplete='off'
+                    hint={<span className='inline-flex items-center gap-1'><KeyRound size={11} /> só a equipe vê</span>}
+                    {...register('device_password')}
+                  />
+                )}
+                {segment.show('condition') && (
+                  <TextAreaField
+                    wrapperClassName='sm:col-span-2'
+                    label={L.condition}
+                    placeholder={L.condition_placeholder}
+                    className='min-h-16'
+                    {...register('condition')}
+                  />
+                )}
+                {segment.show('checklist') && (
+                  <div className='sm:col-span-2 flex flex-col gap-2 rounded-lg border border-line p-3'>
+                    <span className='text-[13px] font-medium text-muted'>{L.checklist}</span>
+                    <ChecklistEditor value={checklist} onChange={setChecklist} />
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        )}
 
         <div className='flex justify-end pt-1 border-t border-line -mx-5 px-5 -mb-1'>
           <Button type='submit' variant='primary' loading={isPending} icon={PenLine} className='mt-4'>

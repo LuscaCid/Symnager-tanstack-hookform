@@ -33,6 +33,8 @@ export const pages = {
   License: lazyPage(() => import("../pages/auth/License")),
   Connection: lazyPage(() => import("../pages/auth/Connection")),
   Track: lazyPage(() => import("../pages/Track")),
+  Verify: lazyPage(() => import("../pages/Verify")),
+  CertificatePrint: lazyPage(() => import("../pages/CertificatePrint")),
   NotFound: lazyPage(() => import("../pages/NotFound")),
 }
 

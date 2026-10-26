@@ -1,7 +1,8 @@
 import { ReactNode } from "react"
 import type { OrderStatus, Priority } from "@/@types/api"
 import { cn } from "@/lib/cn"
-import { PRIORITY_COLOR, PRIORITY_LABEL, STATUS_COLOR, STATUS_HEX, STATUS_LABEL } from "@/lib/format"
+import { PRIORITY_COLOR, PRIORITY_LABEL, STATUS_COLOR, STATUS_HEX } from "@/lib/format"
+import { useSegment } from "@/lib/segment"
 
 export function Badge({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -19,10 +20,11 @@ export function Badge({ children, className }: { children: ReactNode; className?
 
 /** Status da OS: ponto com a cor do status + rótulo. */
 export function StatusBadge({ status }: { status: OrderStatus }) {
+  const { statusLabel } = useSegment()
   return (
     <Badge className={STATUS_COLOR[status]}>
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_HEX[status] }} />
-      {STATUS_LABEL[status] ?? status}
+      {statusLabel(status)}
     </Badge>
   )
 }

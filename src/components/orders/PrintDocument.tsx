@@ -1,4 +1,4 @@
-import type { Order, Settings } from "@/@types/api"
+import type { CustomFieldDef, Order, SegmentProfile, Settings } from "@/@types/api"
 import {
   formatDate,
   formatDateTime,
@@ -7,8 +7,9 @@ import {
   formatOrderNumber,
   formatPhone,
   PRIORITY_LABEL,
-  STATUS_LABEL,
 } from "@/lib/format"
+import { customFieldLines } from "@/lib/orderFields"
+import { FALLBACK_PROFILE, statusLabelOf } from "@/lib/segment"
 import { balanceOf } from "./orderUtils"
 
 export const DEFAULT_PRINT_SETTINGS: Settings = {
@@ -23,33 +24,55 @@ interface DocProps {
   qrCode: string | null
   /** rótulo da via (A4 em duas vias) */
   via?: string
+  /** perfil do ramo (rótulos e campos visíveis) */
+  profile?: SegmentProfile
+  /** campos adicionais em uso (do ramo e da empresa) */
+  customFields?: CustomFieldDef[]
 }
 
 function companyAddress(c: Settings["company"]) {
   return [c.address, [c.city, c.state].filter(Boolean).join("/"), c.zipcode].filter(Boolean).join(" · ")
 }
 
-function equipmentLines(o: Order) {
+const capitalize = (t: string) => t.replace(/^./, (c) => c.toUpperCase())
+
+function equipmentLines(o: Order, profile: SegmentProfile, customFields: CustomFieldDef[]) {
+  const L = profile.labels
+  const show = (f: keyof SegmentProfile["fields"]) => profile.fields[f] !== "hidden"
   return [
-    ["Equipamento", o.device],
-    ["Tipo", o.device_type],
-    ["Marca / modelo", [o.brand, o.model].filter(Boolean).join(" ")],
-    ["Nº de série / IMEI", o.serial],
-    ["Acessórios", o.accessories],
-    ["Estado na entrada", o.condition],
-    [
-      "Checklist",
+    [L.device, o.device],
+    show("device_type") && [L.device_type, o.device_type],
+    (show("brand") || show("model")) && [
+      [show("brand") && L.brand, show("model") && L.model.toLowerCase()].filter(Boolean).join(" / "),
+      [show("brand") && o.brand, show("model") && o.model].filter(Boolean).join(" "),
+    ],
+    show("serial") && [L.serial, o.serial],
+    ...customFieldLines(o, customFields, true),
+    show("accessories") && [L.accessories, o.accessories],
+    show("condition") && [L.condition, o.condition],
+    show("checklist") && [
+      L.checklist,
       (o.checklist ?? [])
         .filter((e) => e.ok !== null)
         .map((e) => `${e.item}: ${e.ok ? "OK" : "PROBLEMA"}`)
         .join(" · "),
     ],
-  ].filter(([, v]) => v) as [string, string][]
+  ].filter((line): line is [string, string] => Array.isArray(line) && !!line[1])
 }
 
-/** Comprovante em A4 (impressora comum). Nunca imprime a senha do aparelho nem observações internas. */
-export function A4Document({ order, settings, qrCode, via }: DocProps) {
+/** Local e horário da visita, quando a OS tem atendimento no endereço do cliente. */
+function visitLines(o: Order, profile: SegmentProfile) {
+  return [
+    o.service_address ? [profile.labels.service_address, o.service_address] : null,
+    o.scheduled_at ? [profile.labels.scheduled_at, formatDateTime(o.scheduled_at)] : null,
+  ].filter(Boolean) as [string, string][]
+}
+
+/** Comprovante em A4 (impressora comum). Nunca imprime a senha nem observações internas. */
+export function A4Document({ order, settings, qrCode, via, profile = FALLBACK_PROFILE, customFields = [] }: DocProps) {
   const c = settings.company
+  const L = profile.labels
+  const visit = visitLines(order, profile)
   const showPrices = settings.print.show_prices
   const items = order.items ?? []
   const number = formatOrderNumber(order.number, settings.orders.prefix || "OS")
@@ -59,7 +82,7 @@ export function A4Document({ order, settings, qrCode, via }: DocProps) {
       <header className="flex items-start gap-3 pb-2 border-b-2 border-black">
         {c.logo && <img src={c.logo} alt="" className="h-14 w-auto max-w-32 object-contain" />}
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-bold">{c.name || "Assistência técnica"}</h1>
+          <h1 className="text-lg font-bold">{c.name || capitalize(L.business)}</h1>
           <p>
             {[c.document && formatDocument(c.document), c.phone && formatPhone(c.phone), c.email].filter(Boolean).join(" · ")}
           </p>
@@ -80,7 +103,7 @@ export function A4Document({ order, settings, qrCode, via }: DocProps) {
           {order.owner?.document && <p>CPF/CNPJ: {formatDocument(order.owner.document)}</p>}
           {order.owner?.phone && <p>Telefone: {formatPhone(order.owner.phone)}</p>}
           {order.owner?.email && <p className="col-span-2">E-mail: {order.owner.email}</p>}
-          <p>Status: {STATUS_LABEL[order.status]}</p>
+          <p>Status: {statusLabelOf(profile, order.status)}</p>
           <p>Prioridade: {PRIORITY_LABEL[order.priority]}</p>
           {order.due_date && <p>Previsão: {formatDate(order.due_date)}</p>}
           {order.technician && <p>Técnico: {order.technician.name}</p>}
@@ -94,11 +117,27 @@ export function A4Document({ order, settings, qrCode, via }: DocProps) {
         )}
       </section>
 
+      {visit.length > 0 && (
+        <section>
+          <p className="font-bold uppercase text-[11px] mb-0.5">Atendimento no local</p>
+          <table>
+            <tbody>
+              {visit.map(([label, value]) => (
+                <tr key={label}>
+                  <th className="w-40 font-semibold">{label}</th>
+                  <td className="whitespace-pre-wrap">{value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
       <section>
-        <p className="font-bold uppercase text-[11px] mb-0.5">Equipamento</p>
+        <p className="font-bold uppercase text-[11px] mb-0.5">{L.device}</p>
         <table>
           <tbody>
-            {equipmentLines(order).map(([label, value]) => (
+            {equipmentLines(order, profile, customFields).map(([label, value]) => (
               <tr key={label}>
                 <th className="w-40 font-semibold">{label}</th>
                 <td className="whitespace-pre-wrap">{value}</td>
@@ -110,18 +149,18 @@ export function A4Document({ order, settings, qrCode, via }: DocProps) {
 
       <section className="grid grid-cols-1 gap-2">
         <div>
-          <p className="font-bold uppercase text-[11px]">Defeito relatado</p>
+          <p className="font-bold uppercase text-[11px]">{L.description}</p>
           <p className="whitespace-pre-wrap border border-zinc-400 p-1.5 min-h-10">{order.description}</p>
         </div>
         {order.diagnosis && (
           <div>
-            <p className="font-bold uppercase text-[11px]">Diagnóstico</p>
+            <p className="font-bold uppercase text-[11px]">{L.diagnosis}</p>
             <p className="whitespace-pre-wrap border border-zinc-400 p-1.5">{order.diagnosis}</p>
           </div>
         )}
         {order.solution && (
           <div>
-            <p className="font-bold uppercase text-[11px]">Serviço executado</p>
+            <p className="font-bold uppercase text-[11px]">{L.solution}</p>
             <p className="whitespace-pre-wrap border border-zinc-400 p-1.5">{order.solution}</p>
           </div>
         )}
@@ -199,8 +238,10 @@ export function A4Document({ order, settings, qrCode, via }: DocProps) {
 }
 
 /** Cupom compacto para impressora térmica 80 mm. */
-export function ThermalDocument({ order, settings, qrCode }: DocProps) {
+export function ThermalDocument({ order, settings, qrCode, profile = FALLBACK_PROFILE, customFields = [] }: DocProps) {
   const c = settings.company
+  const L = profile.labels
+  const visit = visitLines(order, profile)
   const showPrices = settings.print.show_prices
   const items = order.items ?? []
   const number = formatOrderNumber(order.number, settings.orders.prefix || "OS")
@@ -209,7 +250,7 @@ export function ThermalDocument({ order, settings, qrCode }: DocProps) {
   return (
     <article className="print-area print-thermal mx-auto p-2 shadow-xl border border-zinc-300 font-mono">
       <header className="text-center">
-        <p className="font-bold text-[13px] uppercase">{c.name || "Assistência técnica"}</p>
+        <p className="font-bold text-[13px] uppercase">{c.name || L.business}</p>
         {c.document && <p>{formatDocument(c.document)}</p>}
         {c.phone && <p>{formatPhone(c.phone)}</p>}
         {companyAddress(c) && <p>{companyAddress(c)}</p>}
@@ -223,22 +264,28 @@ export function ThermalDocument({ order, settings, qrCode }: DocProps) {
       </p>
       {order.owner?.phone && <p>Tel: {formatPhone(order.owner.phone)}</p>}
       {sep}
-      {equipmentLines(order).map(([label, value]) => (
+      {visit.map(([label, value]) => (
+        <p key={label}>
+          <strong>{label}:</strong> {value}
+        </p>
+      ))}
+      {visit.length > 0 && sep}
+      {equipmentLines(order, profile, customFields).map(([label, value]) => (
         <p key={label}>
           <strong>{label}:</strong> {value}
         </p>
       ))}
       <p className="mt-1">
-        <strong>Defeito:</strong> {order.description}
+        <strong>{L.description}:</strong> {order.description}
       </p>
       {order.diagnosis && (
         <p>
-          <strong>Diagnóstico:</strong> {order.diagnosis}
+          <strong>{L.diagnosis}:</strong> {order.diagnosis}
         </p>
       )}
       {order.solution && (
         <p>
-          <strong>Serviço:</strong> {order.solution}
+          <strong>{L.solution}:</strong> {order.solution}
         </p>
       )}
       {order.due_date && (

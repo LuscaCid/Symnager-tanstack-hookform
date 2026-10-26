@@ -2,7 +2,8 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { Check, ChevronDown, RotateCcw } from "lucide-react"
 import { ORDER_STATUSES, type Order, type OrderStatus } from "@/@types/api"
 import { useHasRole } from "@/contexts/Auth-context"
-import { STATUS_HEX, STATUS_LABEL } from "@/lib/format"
+import { STATUS_HEX } from "@/lib/format"
+import { useSegment } from "@/lib/segment"
 import { isFinal } from "./orderUtils"
 
 const itemClass =
@@ -12,6 +13,7 @@ const itemClass =
 export function StatusMenu({ order, onSelect, disabled }: { order: Order; onSelect: (status: OrderStatus) => void; disabled?: boolean }) {
   const isAdmin = useHasRole()
   const final = isFinal(order.status)
+  const { statusLabel } = useSegment()
 
   return (
     <DropdownMenu.Root>
@@ -34,7 +36,7 @@ export function StatusMenu({ order, onSelect, disabled }: { order: Order; onSele
             ORDER_STATUSES.map((status) => (
               <DropdownMenu.Item key={status} onSelect={() => onSelect(status)} className={itemClass}>
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: STATUS_HEX[status] }} />
-                <span className="flex-1">{STATUS_LABEL[status]}</span>
+                <span className="flex-1">{statusLabel(status)}</span>
                 {status === order.status && <Check size={14} />}
               </DropdownMenu.Item>
             ))

@@ -1,5 +1,7 @@
 import type { Order, OrderStatus } from "@/@types/api"
-import { FINAL_STATUSES, formatDate, formatMoney, formatOrderNumber, onlyDigits, STATUS_LABEL } from "@/lib/format"
+import type { SegmentProfile } from "@/@types/api"
+import { FINAL_STATUSES, formatDate, formatMoney, formatOrderNumber, onlyDigits } from "@/lib/format"
+import { FALLBACK_PROFILE, fillTemplate, statusLabelOf } from "@/lib/segment"
 import { bridge } from "@/lib/runtime"
 
 export const isFinal = (status: OrderStatus) => FINAL_STATUSES.includes(status)
@@ -19,24 +21,18 @@ export function warrantyInfo(order: Pick<Order, "status" | "warranty_until" | "w
   return { active: until.getTime() >= Date.now(), until }
 }
 
-const STATUS_MESSAGE: Partial<Record<OrderStatus, string>> = {
-  ABERTA: "foi recebido e está na fila de atendimento",
-  EM_ANALISE: "está em análise pela nossa equipe técnica",
-  AGUARDANDO_APROVACAO: "já foi avaliado e o orçamento aguarda sua aprovação",
-  APROVADA: "teve o orçamento aprovado e logo entra em reparo",
-  AGUARDANDO_PECA: "está aguardando a chegada de uma peça",
-  EM_REPARO: "está em reparo",
-  PRONTA: "está pronto para retirada",
-  ENTREGUE: "foi entregue. Obrigado pela confiança!",
-  CANCELADA: "teve a ordem de serviço cancelada",
-}
-
-/** Mensagem pronta para avisar o cliente pelo WhatsApp. */
-export function whatsappMessage(order: Order, companyName?: string) {
+/** Mensagem pronta para avisar o cliente pelo WhatsApp, com os textos do ramo da empresa. */
+export function whatsappMessage(order: Order, companyName: string | undefined, profile: SegmentProfile = FALLBACK_PROFILE) {
   const first = order.owner?.name?.split(" ")[0] ?? ""
-  const lines = [
-    `Olá${first ? `, ${first}` : ""}! Seu ${order.device} (${formatOrderNumber(order.number)}) ${STATUS_MESSAGE[order.status] ?? `está com status: ${STATUS_LABEL[order.status]}`}.`,
-  ]
+  const subject = fillTemplate(profile.messages.subject, { equipamento: order.device })
+  const statusText = profile.messages.status[order.status] ?? `está com status: ${statusLabelOf(profile, order.status)}`
+  const lines = [`Olá${first ? `, ${first}` : ""}! ${subject} (${formatOrderNumber(order.number)}) ${statusText}.`]
+  const visit = order.scheduled_at ? new Date(order.scheduled_at) : null
+  if (visit && visit.getTime() > Date.now() && !isFinal(order.status)) {
+    const when = `${formatDate(visit, "EEEE, dd/MM 'às' HH:mm")}`
+    lines.push(`${subject.replace(/^./, (c) => c.toUpperCase())} ${fillTemplate(profile.messages.scheduled, { data: when })}.`)
+    if (order.service_address) lines.push(`Local: ${order.service_address}`)
+  }
   if (order.status === "AGUARDANDO_APROVACAO" || order.status === "PRONTA") {
     if (order.total > 0) lines.push(`Valor: ${formatMoney(order.total)}${order.paid > 0 ? ` (saldo ${formatMoney(balanceOf(order))})` : ""}.`)
   }

@@ -1,4 +1,4 @@
-import type { FailureCategory, FailureStats } from "@/@types/api"
+import type { FailureCategory, FailureStats, SegmentProfile } from "@/@types/api"
 import { FAILURE_CATEGORY_LABEL, formatHours } from "@/lib/format"
 
 export interface Insight {
@@ -6,18 +6,19 @@ export interface Insight {
   text: string
 }
 
-const ADVICE: Partial<Record<FailureCategory, string>> = {
+const advice = (equipment: string): Partial<Record<FailureCategory, string>> => ({
   ENTREGA: "confirme endereço e disponibilidade do cliente antes de sair para entrega",
-  GARANTIA: "reforce o teste final antes de liberar o aparelho",
+  GARANTIA: `reforce o teste final antes de liberar o ${equipment}`,
   RETRABALHO: "revise o diagnóstico e use o checklist de saída",
   PECA: "avalie a qualidade do fornecedor das peças",
   ATRASO: "ajuste as previsões de entrega ou a fila de técnicos",
-}
+})
 
 const pct = (v: number) => `${Math.round(v * 100)}%`
 
 /** Observações em linguagem simples a partir das estatísticas (máx. 4). */
-export function buildInsights(stats: FailureStats): Insight[] {
+export function buildInsights(stats: FailureStats, profile?: SegmentProfile): Insight[] {
+  const ADVICE = advice(profile?.labels.equipment ?? "aparelho")
   const out: Insight[] = []
   if (stats.total === 0) {
     return [{ tone: "success", text: "Nenhuma falha registrada no período. Continue registrando retornos e problemas na entrega para manter este mapa confiável." }]

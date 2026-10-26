@@ -23,10 +23,12 @@ import { useNavigate } from "react-router-dom"
 import { dashboardService } from "@/services/resources"
 import { Button, DataTable, EmptyState, ErrorState, Page, PageBody, PageHeader, Panel, StatCard } from "@/components/ui"
 import { HistoryBox } from "@/components/Home/HistoryComponents/HistoryBox"
+import { UpcomingMaintenance } from "@/components/certificates/UpcomingMaintenance"
 import { PeriodSelector, usePeriod } from "@/components/dashboard/PeriodSelector"
 import { ChartCard, HBarChart, MiniTable, NoData, TimeSeriesChart, shortDay } from "@/components/dashboard/charts"
 import { useChartTheme } from "@/components/dashboard/chartTheme"
-import { formatHours, formatMoney, formatNumber, formatPercent, STATUS_HEX, STATUS_LABEL } from "@/lib/format"
+import { formatHours, formatMoney, formatNumber, formatPercent, STATUS_HEX } from "@/lib/format"
+import { useSegment } from "@/lib/segment"
 import { useCurrentUser } from "@/contexts/Auth-context"
 import type { Dashboard as DashboardData } from "@/@types/api"
 
@@ -37,6 +39,7 @@ function greeting() {
 
 function Kpis({ data }: { data: DashboardData }) {
   const navigate = useNavigate()
+  const { label } = useSegment()
   const k = data.kpis
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -63,7 +66,7 @@ function Kpis({ data }: { data: DashboardData }) {
       <StatCard icon={DollarSign} label="Faturamento" value={formatMoney(k.revenue)} tone="success" hint="Pagamentos recebidos" />
       <StatCard icon={Wallet} label="A receber" value={formatMoney(k.receivable)} tone={k.receivable > 0 ? "warning" : undefined} hint="Prontas e entregues" />
       <StatCard icon={Receipt} label="Ticket médio" value={formatMoney(k.avg_ticket)} />
-      <StatCard icon={Clock} label="Tempo médio de reparo" value={formatHours(k.avg_turnaround_hours)} hint="Entrada → pronta" />
+      <StatCard icon={Clock} label={label("turnaround")} value={formatHours(k.avg_turnaround_hours)} hint="Entrada → pronta" />
       <StatCard
         icon={AlertTriangle}
         label="Taxa de falhas"
@@ -80,12 +83,13 @@ function Kpis({ data }: { data: DashboardData }) {
 function Charts({ data }: { data: DashboardData }) {
   const navigate = useNavigate()
   const t = useChartTheme()
+  const { label, statusLabel } = useSegment()
   const hasDaily = data.orders_per_day.some((d) => d.created || d.delivered)
   const hasRevenue = data.revenue_per_day.some((d) => d.amount)
   const statusItems = data.by_status
     .filter((s) => s.count > 0)
     .sort((a, b) => b.count - a.count)
-    .map((s) => ({ key: s.status, label: STATUS_LABEL[s.status] ?? s.status, value: s.count, color: STATUS_HEX[s.status] }))
+    .map((s) => ({ key: s.status, label: statusLabel(s.status), value: s.count, color: STATUS_HEX[s.status] }))
   const devices = data.top_devices.slice(0, 8).map((d) => ({ key: d.key, label: d.key || "Não informado", value: d.count }))
   const brands = data.top_brands.slice(0, 8).map((d) => ({ key: d.key, label: d.key || "Não informada", value: d.count, color: t.series[1] }))
 
@@ -131,10 +135,10 @@ function Charts({ data }: { data: DashboardData }) {
         )}
       </ChartCard>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ChartCard title="Top equipamentos" icon={Smartphone} table={<MiniTable head={["Tipo", "OS"]} rows={devices.map((d) => [d.label, d.value])} />}>
+        <ChartCard title={label("top_types")} icon={Smartphone} table={<MiniTable head={[label("device_type"), "OS"]} rows={devices.map((d) => [d.label, d.value])} />}>
           {devices.length ? <HBarChart items={devices} /> : <NoData />}
         </ChartCard>
-        <ChartCard title="Top marcas" icon={Smartphone} table={<MiniTable head={["Marca", "OS"]} rows={brands.map((d) => [d.label, d.value])} />}>
+        <ChartCard title={`Top ${label("brand").toLowerCase()}s`} icon={Smartphone} table={<MiniTable head={[label("brand"), "OS"]} rows={brands.map((d) => [d.label, d.value])} />}>
           {brands.length ? <HBarChart items={brands} /> : <NoData />}
         </ChartCard>
       </div>
@@ -204,6 +208,7 @@ function Rankings({ data }: { data: DashboardData }) {
 
 export default function Dashboard() {
   const user = useCurrentUser()
+  const { certificateTypes } = useSegment()
   const period = usePeriod("dashboard", "30d")
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["dashboard", period.params],
@@ -237,6 +242,7 @@ export default function Dashboard() {
             <Kpis data={data} />
             <Charts data={data} />
             <Rankings data={data} />
+            {certificateTypes.length > 0 && <UpcomingMaintenance />}
             <Panel title="OS recentes" icon={ClipboardList} bodyClassName="p-2">
               {data.recent_orders.length ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">

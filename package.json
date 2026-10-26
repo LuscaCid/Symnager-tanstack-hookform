@@ -15,6 +15,10 @@
     "electron:start": "npm run build && node scripts/build-electron.mjs && electron .",
     "electron:pack": "npm run build && npm run build:api && node scripts/build-electron.mjs && electron-builder --config electron-builder.yml --dir",
     "electron:build": "npm run build && npm run build:api && cross-env NODE_ENV=production node scripts/build-electron.mjs && electron-builder --config electron-builder.yml",
+    "electron:build:celular": "node scripts/build-segment.mjs CELULAR_INFORMATICA",
+    "electron:build:ar": "node scripts/build-segment.mjs AR_CONDICIONADO",
+    "electron:build:eletro": "node scripts/build-segment.mjs ELETRODOMESTICOS",
+    "electron:build:geral": "node scripts/build-segment.mjs SERVICOS_GERAIS",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down"
   },
